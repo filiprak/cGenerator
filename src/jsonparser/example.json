@@ -1,0 +1,30 @@
+{
+ "moduleName": "test",
+ "module": [
+   { 
+     "typeName": "MyInt",
+     "type": "INTEGER",
+     "minValue": "0",
+     "maxValue": "123",
+     "size": "8",
+     "encoding": "pos-int"
+     },
+   
+  {"SequenceName": "MySeq",
+    "data": [ 
+	{ "attrib': "a",
+	  "type": "MyInt",
+	  "value": "11"
+	 },
+	{ "attrib': "b",
+	  "type": "MyInt",
+	  "value": "12"
+	 },
+       { "attrib': "c",
+	  "type": "MyInt",
+	  "value": "13"
+	 }
+	]
+      }
+   ] 
+}
