@@ -3,7 +3,7 @@ Created on 21.03.2017
 
 @author: raqu
 '''
-from jsonparser.reader import JSONReader
+from jsonparser.lexer import JSONLexer
 
 
 class JSONParser():
@@ -11,7 +11,7 @@ class JSONParser():
     Main JSON jsonparser class
     '''
     def __init__(self):
-        self.reader = JSONReader()
+        self.reader = JSONLexer()
     
     def parse(self, jsonFile):
         '''
