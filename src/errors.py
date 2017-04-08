@@ -7,9 +7,9 @@ Created on 07.04.2017
 
 class LexerError(Exception):
     
-    def __init__(self, message):
+    def __init__(self, message, line):
         self.message = "SyntaxError: " + str(message)
-        
+        self.message += "\n>>>" + line
     def __str__(self):
         return repr(self.message)
 

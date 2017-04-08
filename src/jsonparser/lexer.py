@@ -7,6 +7,7 @@ recognizes tokens, outputs token table
 
 from .constants import Token
 from errors import LexerError
+from __builtin__ import str
 
 
 """ helper functions """
@@ -81,7 +82,8 @@ class JSONLexer():
                 string = self.readString()
                 result.append( (self.currentLine, Token.STRING, string) ) 
             else:
-                raise LexerError(self.errorMessage(token=self.lastChar))
+                raise LexerError(self.errorMessage(token=self.lastChar),
+                                 self.getFileLine(self.currentLine) )
                 
             currentChar = self.read()
             
@@ -143,7 +145,11 @@ class JSONLexer():
         while character and character != '"':
             string += character
             character = self.read(whitespaces=True)
-            
+        
+        if character != '"':
+            raise LexerError(self.errorMessage(expected=" '\"' at the end of STRING token"),
+                                 self.getFileLine(self.currentLine) )
+        
         return string
     
     
@@ -176,7 +182,8 @@ class JSONLexer():
             self.read()
         
         if not isDigit(self.lastChar):
-            raise LexerError(self.errorMessage(token="bad number format"))
+            raise LexerError(self.errorMessage(token="bad number format"),
+                                 self.getFileLine(self.currentLine) )
         if not isDigit(self.nextChar):
             return integer + self.lastChar
         
@@ -191,33 +198,39 @@ class JSONLexer():
         '''
         Reads literal
         '''
-        nullLiteral = ['n', 'u', 'l', 'l']
-        trueLiteral = ['t', 'r', 'u', 'e']
-        falseLiteral = ['f', 'a', 'l', 's', 'e']
+        nullLiteral = ['u', 'l', 'l']
+        trueLiteral = ['r', 'u', 'e']
+        falseLiteral = ['a', 'l', 's', 'e']
         
         if self.lastChar == 'n':
             for charact in nullLiteral:
-                if charact != self.lastChar:
-                    raise LexerError(self.errorMessage(expected="null"))
                 self.read()
+                if charact != self.lastChar:
+                    raise LexerError(self.errorMessage(expected="null"),
+                                 self.getFileLine(self.currentLine) )
+                
             return "null"
                 
         elif self.lastChar == 't':
             for charact in trueLiteral:
-                if charact != self.lastChar:
-                    raise LexerError(self.errorMessage(expected="true"))
                 self.read()
+                if charact != self.lastChar:
+                    raise LexerError(self.errorMessage(expected="true"),
+                                 self.getFileLine(self.currentLine) )
+                
             return "true"
                 
         elif self.lastChar == 'f':
             for charact in falseLiteral:
-                if charact != self.lastChar:
-                    raise LexerError(self.errorMessage(expected="false"))
                 self.read()
+                if charact != self.lastChar:
+                    raise LexerError(self.errorMessage(expected="false"),
+                                 self.getFileLine(self.currentLine) )
+                
             return "false"
                 
         else:
-            raise LexerError()
+            raise LexerError(line=self.getFileLine(self.currentLine) )
         
         return None
     
@@ -235,6 +248,24 @@ class JSONLexer():
             message += ", expected: " + str(expected)
         return str(self.currentFile) + ": line: " + str(self.currentLine) + ": " + message 
         
+    def getFileLine(self, lineNr):
+        '''
+        Returns character string of line of given number
+        :param lineNr: number of line to get
+        '''
+        if lineNr == None:
+            return "empty line"
+        linenum = 1
+        strline = ""
+        for character in self.bufferSting:
+            strline += character 
+            if character == '\n':
+                if linenum == lineNr:
+                    return strline
+                linenum += 1
+                strline = ""    
+                
+        return "EOF"
     
     def loadFile(self, filename):
         '''
