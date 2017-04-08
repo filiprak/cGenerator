@@ -46,36 +46,35 @@ class JSONLexer():
         self.bufferSize = 0
         
     def analyze(self):
-        token = Token()
         result = [] # tokenized file contents
         
         currentChar = self.read()
         
         while currentChar:
             if currentChar == '{':
-                result.append( (self.currentLine, token.BEGIN_OBJECT, "{") )
+                result.append( (self.currentLine, Token.BEGIN_OBJECT, "{") )
             elif currentChar == '}':
-                result.append( (self.currentLine, token.END_OBJECT, "}") )
+                result.append( (self.currentLine, Token.END_OBJECT, "}") )
             elif currentChar == '[':
-                result.append( (self.currentLine, token.BEGIN_ARRAY, "[") )
+                result.append( (self.currentLine, Token.BEGIN_ARRAY, "[") )
             elif currentChar == ']':
-                result.append( (self.currentLine, token.END_ARRAY, "]") )
+                result.append( (self.currentLine, Token.END_ARRAY, "]") )
             elif currentChar == ':':
-                result.append( (self.currentLine, token.COLON, ":") )
+                result.append( (self.currentLine, Token.COLON, ":") )
             elif currentChar == ',':
-                result.append( (self.currentLine, token.COMA, ",") )
+                result.append( (self.currentLine, Token.COMA, ",") )
             elif currentChar == 'n' or currentChar == 't' or currentChar == 'f':
                 literal = self.readLiteral()
-                result.append( (self.currentLine, token.LITERAL, literal) )
+                result.append( (self.currentLine, Token.LITERAL, literal) )
             elif isDigit(currentChar):
                 number = self.readInteger()
-                result.append( (self.currentLine, token.NUMBER, number) )
+                result.append( (self.currentLine, Token.NUMBER, number) )
             elif currentChar == '-':
                 number = self.readInteger()
-                result.append( (self.currentLine, token.NUMBER, number) )   
+                result.append( (self.currentLine, Token.NUMBER, number) )   
             elif currentChar == '"':
                 string = self.readString()
-                result.append( (self.currentLine, token.STRING, string) ) 
+                result.append( (self.currentLine, Token.STRING, string) ) 
             else:
                 raise LexerError(self.errorMessage(token=self.lastChar))
                 
@@ -94,22 +93,9 @@ class JSONLexer():
         if self.currentPosition == self.bufferSize:
             return None
         
-        if self.currentPosition + 1 == self.bufferSize:
-            self.nextChar = None
-        else:
-            # skipping whitespaces
-            if not whitespaces:
-                i = self.currentPosition + 1
-                while isWhitespace(self.nextChar):
-                    if i == self.bufferSize:
-                        self.nextChar = None
-                        break
-                    self.nextChar = self.bufferSting[i]
-                    i += 1
-        
         self.lastChar = self.bufferSting[self.currentPosition]
         
-        # skipping whitespaces
+        # skipping whitespaces for lastChar
         if not whitespaces:
             while isWhitespace(self.lastChar):
                 if self.lastChar == '\n':
@@ -120,12 +106,23 @@ class JSONLexer():
                     return None
                 
                 self.lastChar = self.bufferSting[self.currentPosition]
-                
-                if self.currentPosition + 1 == self.bufferSize:
+
+        # next character find
+        if self.currentPosition + 1 == self.bufferSize:
+            self.nextChar = None
+        elif not whitespaces:
+            # skipping whitespaces
+            i = self.currentPosition + 1
+            self.nextChar = self.bufferSting[i]
+            while isWhitespace(self.nextChar):
+                i += 1
+                if i == self.bufferSize:
                     self.nextChar = None
-                else:
-                    self.nextChar = self.bufferSting[self.currentPosition + 1]
-        
+                    break
+                self.nextChar = self.bufferSting[i]
+        else:
+            self.nextChar = self.bufferSting[self.currentPosition + 1]
+
         self.currentPosition += 1
         return self.lastChar
     
@@ -173,7 +170,6 @@ class JSONLexer():
         integer += self.lastChar
         while isDigit(self.nextChar):
             self.read()
-            print("-->" + self.lastChar)
             integer += self.lastChar
         return integer
         
@@ -239,5 +235,4 @@ class JSONLexer():
         self.currentFile = filename
         return self.bufferSting, len(self.bufferSting)
     
-
     
