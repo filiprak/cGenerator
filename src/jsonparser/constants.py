@@ -1,5 +1,5 @@
 
-class Token():
+class Token(object):
     BEGIN_OBJECT = 0 # = '{'
     END_OBJECT = 1 # = '}'
     BEGIN_ARRAY = 2 # = '['
@@ -7,6 +7,5 @@ class Token():
     COLON = 4 # = '='
     COMA = 5 # = ','
     NUMBER = 6 # float or integer value
-    LITERAL = 7 # string ‘null’, ‘false’ lub ‘true’
+    LITERAL = 7 # string null, false, true
     STRING = 8 # normal string
-    QUOTE = 9 # = ‘ “ ‘

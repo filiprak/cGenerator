@@ -4,11 +4,28 @@ Created on 21.03.2017
 @author: raqu
 '''
 
-from jsonparser.constants import Token
+from .constants import Token
+from errors import LexerError
 
 # helper functions
 def isWhitespace(character):
+    if not character:
+        return False
+    
     return character == ' ' or character == '\t' or character == '\n' or character == '\r'
+
+def isDigit(character, isNonzero=False):
+    if not character:
+        return False
+    
+    if isNonzero and character == '0':
+        return False
+    
+    return character == '0' or character == '1' \
+            or character == '2' or character == '3' \
+            or character == '4' or character == '5' \
+            or character == '6' or character == '7' \
+            or character == '8' or character == '9'
 
 
 class JSONLexer():
@@ -18,8 +35,10 @@ class JSONLexer():
     '''
     def __init__(self):
         self.fileLoaded = False
+        self.currentFile = None
         
         self.lastChar = None
+        self.nextChar = None
         self.currentPosition = 0
         self.currentLine = 1
         
@@ -34,9 +53,32 @@ class JSONLexer():
         
         while currentChar:
             if currentChar == '{':
-                result.append( (self.currentLine, token.BEGIN_OBJECT.__class__) )
+                result.append( (self.currentLine, token.BEGIN_OBJECT, "{") )
             elif currentChar == '}':
-                result.append( (self.currentLine, token.END_OBJECT.__class__) )
+                result.append( (self.currentLine, token.END_OBJECT, "}") )
+            elif currentChar == '[':
+                result.append( (self.currentLine, token.BEGIN_ARRAY, "[") )
+            elif currentChar == ']':
+                result.append( (self.currentLine, token.END_ARRAY, "]") )
+            elif currentChar == ':':
+                result.append( (self.currentLine, token.COLON, ":") )
+            elif currentChar == ',':
+                result.append( (self.currentLine, token.COMA, ",") )
+            elif currentChar == 'n' or currentChar == 't' or currentChar == 'f':
+                literal = self.readLiteral()
+                result.append( (self.currentLine, token.LITERAL, literal) )
+            elif isDigit(currentChar):
+                number = self.readInteger()
+                result.append( (self.currentLine, token.NUMBER, number) )
+            elif currentChar == '-':
+                number = self.readInteger()
+                result.append( (self.currentLine, token.NUMBER, number) )   
+            elif currentChar == '"':
+                string = self.readString()
+                result.append( (self.currentLine, token.STRING, string) ) 
+            else:
+                raise LexerError(self.errorMessage(token=self.lastChar))
+                
             currentChar = self.read()
             
         return result
@@ -52,6 +94,19 @@ class JSONLexer():
         if self.currentPosition == self.bufferSize:
             return None
         
+        if self.currentPosition + 1 == self.bufferSize:
+            self.nextChar = None
+        else:
+            # skipping whitespaces
+            if not whitespaces:
+                i = self.currentPosition + 1
+                while isWhitespace(self.nextChar):
+                    if i == self.bufferSize:
+                        self.nextChar = None
+                        break
+                    self.nextChar = self.bufferSting[i]
+                    i += 1
+        
         self.lastChar = self.bufferSting[self.currentPosition]
         
         # skipping whitespaces
@@ -65,17 +120,102 @@ class JSONLexer():
                     return None
                 
                 self.lastChar = self.bufferSting[self.currentPosition]
+                
+                if self.currentPosition + 1 == self.bufferSize:
+                    self.nextChar = None
+                else:
+                    self.nextChar = self.bufferSting[self.currentPosition + 1]
         
         self.currentPosition += 1
         return self.lastChar
     
+    
     def readString(self):
-        return None
-    def readNumber(self):
-        return None
+        string = ""
+        character = self.read(whitespaces=True)
+        while character and character != '"':
+            string += character
+            character = self.read(whitespaces=True)
+            
+        return string
+    
+    
+    """def readNumber(self):
+       
+        if self.lastChar == '0':
+            if self.nextChar != '.':
+                number += "0."
+                while isDigit(self.read()):
+                    number += self.lastChar
+                    
+                
+            else:
+                return "0"
+        else:
+            raise
+        while self.lastChar:
+            
+            self.read()
+            
+        return number"""
+    
+    def readInteger(self):
+        integer = ""
+        if self.lastChar == '-':
+            integer += '-'
+            self.read()
+        
+        if not isDigit(self.lastChar):
+            raise LexerError(self.errorMessage(token="bad number format"))
+        if not isDigit(self.nextChar):
+            return integer + self.lastChar
+        
+        integer += self.lastChar
+        while isDigit(self.nextChar):
+            self.read()
+            print("-->" + self.lastChar)
+            integer += self.lastChar
+        return integer
+        
+    
     def readLiteral(self):
+        nullLiteral = ['n', 'u', 'l', 'l']
+        trueLiteral = ['t', 'r', 'u', 'e']
+        falseLiteral = ['f', 'a', 'l', 's', 'e']
+        
+        if self.lastChar == 'n':
+            for charact in nullLiteral:
+                if charact != self.lastChar:
+                    raise LexerError(self.errorMessage(expected="null"))
+                self.read()
+                
+        elif self.lastChar == 't':
+            for charact in trueLiteral:
+                if charact != self.lastChar:
+                    raise LexerError(self.errorMessage(expected="true"))
+                self.read()
+                
+        elif self.lastChar == 'f':
+            for charact in falseLiteral:
+                if charact != self.lastChar:
+                    raise LexerError(self.errorMessage(expected="false"))
+                self.read()
+                
+        else:
+            raise LexerError()
+        
         return None
-     
+    
+    
+    def errorMessage(self, expected=None, token=None):
+        message = "Unrecognized token"
+        if token:
+            message += ": " + str(token)
+        if expected:
+            message += ", expected: " + str(expected)
+        return str(self.currentFile) + ": line: " + str(self.currentLine) + ": " + message 
+        
+    
     def loadFile(self, filename):
         '''
         Loads .json file to string format
@@ -96,13 +236,8 @@ class JSONLexer():
         self.bufferSize = len(self.bufferSting)
         
         self.fileLoaded = True
+        self.currentFile = filename
         return self.bufferSting, len(self.bufferSting)
     
-    # for testing purposes
-    def test(self):
-        c = self.read()
-        while c:
-            print("line-{} char-{}: [{}]".format(self.currentLine, self.currentPosition, c))
-            c = self.read()
 
     

@@ -5,6 +5,7 @@ Created on 15.03.2017
 '''
 
 from jsonparser.lexer import JSONLexer
+from errors import LexerError
 
 def main():
     
@@ -14,10 +15,12 @@ def main():
     try:
         lexer.loadFile(name)
         res = lexer.analyze()
-        for (line, type) in res:
-            print(str(line) + "  " + str(type))
+        for (line, type, string) in res:
+            print(str(line) + "  " + str(type) + "  " + str(string))
         
     except IOError as ioErr:
         print("I/O error({0}): {1}: {2}".format(ioErr.errno, ioErr.strerror, ioErr.args[2]))
+    except LexerError as leErr:
+        print(leErr.message)
         
 main()
