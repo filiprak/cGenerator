@@ -1,5 +1,13 @@
+'''
+Created on 28.03.2017
+Constants module
+@author: raqu
+'''
 
 class Token(object):
+    '''
+    Token types which are recognized by lexer
+    '''
     BEGIN_OBJECT = 0 # = '{'
     END_OBJECT = 1 # = '}'
     BEGIN_ARRAY = 2 # = '['
@@ -9,6 +17,7 @@ class Token(object):
     NUMBER = 6 # float or integer value
     LITERAL = 7 # string null, false, true
     STRING = 8 # normal string
+    
     
     @staticmethod
     def toString(token):

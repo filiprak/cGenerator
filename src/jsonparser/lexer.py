@@ -1,13 +1,15 @@
 '''
 Created on 21.03.2017
-
+Lexer module: reads characters from file and
+recognizes tokens, outputs token table
 @author: raqu
 '''
 
 from .constants import Token
 from errors import LexerError
 
-# helper functions
+
+""" helper functions """
 def isWhitespace(character):
     if not character:
         return False
@@ -35,17 +37,20 @@ class JSONLexer():
     '''
     def __init__(self):
         self.fileLoaded = False
-        self.currentFile = None
+        self.currentFile = None # currently processed file name
         
-        self.lastChar = None
-        self.nextChar = None
-        self.currentPosition = 0
-        self.currentLine = 1
+        self.lastChar = None # last read character
+        self.nextChar = None # next character to be read
+        self.currentPosition = 0 # number of chars from the file begining
+        self.currentLine = 1 # currently processed file line
         
         self.bufferSting = None # buffer for file characters
-        self.bufferSize = 0
+        self.bufferSize = 0 # number of chars in the file
         
     def analyze(self):
+        '''
+        Recognizes tokens and puts it into result list
+        '''
         result = [] # tokenized file contents
         
         currentChar = self.read()
@@ -81,11 +86,13 @@ class JSONLexer():
             currentChar = self.read()
             
         return result
-        
+
+
     def read(self, whitespaces=False):
         '''
         Returns next character from buffer, skipping all whitespaces between
         if whitespaces=False, otherwise it reads whitespaces
+        Sets current character and next character properly
         '''
         if not self.fileLoaded:
             return None
@@ -107,7 +114,7 @@ class JSONLexer():
                 
                 self.lastChar = self.bufferSting[self.currentPosition]
 
-        # next character find
+        # looking for next character
         if self.currentPosition + 1 == self.bufferSize:
             self.nextChar = None
         elif not whitespaces:
@@ -128,6 +135,9 @@ class JSONLexer():
     
     
     def readString(self):
+        '''
+        Reads string of characters
+        '''
         string = ""
         character = self.read(whitespaces=True)
         while character and character != '"':
@@ -157,6 +167,9 @@ class JSONLexer():
         return number"""
     
     def readInteger(self):
+        '''
+        Reads integer to string
+        '''
         integer = ""
         if self.lastChar == '-':
             integer += '-'
@@ -175,6 +188,9 @@ class JSONLexer():
         
     
     def readLiteral(self):
+        '''
+        Reads literal
+        '''
         nullLiteral = ['n', 'u', 'l', 'l']
         trueLiteral = ['t', 'r', 'u', 'e']
         falseLiteral = ['f', 'a', 'l', 's', 'e']
@@ -184,18 +200,21 @@ class JSONLexer():
                 if charact != self.lastChar:
                     raise LexerError(self.errorMessage(expected="null"))
                 self.read()
+            return "null"
                 
         elif self.lastChar == 't':
             for charact in trueLiteral:
                 if charact != self.lastChar:
                     raise LexerError(self.errorMessage(expected="true"))
                 self.read()
+            return "true"
                 
         elif self.lastChar == 'f':
             for charact in falseLiteral:
                 if charact != self.lastChar:
                     raise LexerError(self.errorMessage(expected="false"))
                 self.read()
+            return "false"
                 
         else:
             raise LexerError()
@@ -204,6 +223,11 @@ class JSONLexer():
     
     
     def errorMessage(self, expected=None, token=None):
+        '''
+        Creates error message from parameters:
+        :param expected: expected value/token
+        :param token: points where has occured an error (file fragment)
+        '''
         message = "Unrecognized token"
         if token:
             message += ": " + str(token)

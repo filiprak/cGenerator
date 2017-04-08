@@ -1,14 +1,21 @@
 '''
 Created on 21.03.2017
-
+Test functions
 @author: raqu
 '''
 
 from jsonparser.lexer import JSONLexer
 from errors import LexerError
 
+
 def testLexerRead(withWhSpaces, trace=False):
-    print("Testing lexer read: whitespaces: " + str(withWhSpaces))
+    '''
+    Unit test for JSONLexer.read() function
+    :param withWhSpaces: with or without whitespaces taking into account
+    :param trace: tells if detailed output have to be printed
+    '''
+    
+    print("Testing JSONLexer.read(): whitespaces: " + str(withWhSpaces))
     
     lexer = JSONLexer()
     name = "example.json"
@@ -38,8 +45,9 @@ def testLexerRead(withWhSpaces, trace=False):
         print("I/O error({0}): {1}: {2}".format(ioErr.errno, ioErr.strerror, ioErr.args[2]))
     except LexerError as leErr:
         print(leErr.message)
+    
         
-        
+"""run tests JSONLexer.read()"""
 testLexerRead(True)
 testLexerRead(False)
 
