@@ -13,13 +13,17 @@ class JSONParser():
     Main JSON jsonparser class
     '''
     def __init__(self):
-        self.lexer = JSONLexer()
+        self.tokenTable = None
     
-    def parse(self, jsonFile):
+    def parse(self, input):
         '''
         Parses JSON data from given file
         :param jsonFile: path to file to parse
         '''
-        self.lexer.loadFile(jsonFile)
+        if input == None:
+            return None
         
+        return None
+    
+    def parseJSONObject(self):
         return None
