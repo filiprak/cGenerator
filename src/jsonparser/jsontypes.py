@@ -7,6 +7,9 @@ They hold values of proper json types
 
 
 class JSONObject(object):
+    '''
+    Represents json object, pairs can be add using append method
+    '''
     def __init__(self):
         self.pairs = []
     
@@ -22,6 +25,10 @@ class JSONObject(object):
         
         
 class JSONPair(object):
+    '''
+    Represents json pair, name is string name of pair,
+    value is one of: JSONObject, JSONNumber, JSONString, JSONArray, JSONLiteral
+    '''
     def __init__(self, name="", value=None):
         self.name = name
         self.value = value
@@ -43,6 +50,9 @@ class JSONPair(object):
 
 
 class JSONArray(object):
+    '''
+    Represents json array, can hold same values as json pair
+    '''
     def __init__(self):
         self.elements = dict()
         self.size = 0
@@ -75,6 +85,9 @@ class JSONArray(object):
 
 
 class JSONString(object):
+    '''
+    Represents json character string
+    '''
     def __init__(self, string=""):
         self.string = string
 
@@ -84,6 +97,11 @@ class JSONString(object):
         return self.string == string
 
 class JSONNumber(object):
+    '''
+    Represents json number, can be float, integer, positive or negative number
+    value is converted from given string number representation to float value
+    value is interpreted as integer when it fraction part equals 0
+    '''
     def __init__(self, number=""):
         self.number = number
         self.value = float(number)
@@ -99,6 +117,9 @@ class JSONNumber(object):
     
     
 class JSONLiteral(object):
+    '''
+    Represents json null, true or false values
+    '''
     def __init__(self, literal="null"):
         self.literal = literal
 
