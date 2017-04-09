@@ -7,7 +7,6 @@ recognizes tokens, outputs token table
 
 from .constants import Token
 from errors import LexerError
-from __builtin__ import str, int
 
 
 """ helper functions """
@@ -144,7 +143,10 @@ class JSONLexer():
     
     
     def readNumber(self):
-       
+        '''
+        Reads integer or float number, supports exponent notation
+        Puts read number into a string
+        '''
         number = self.readInteger()
         
         if self.nextChar == '.':
@@ -165,6 +167,9 @@ class JSONLexer():
         return number
     
     def readExponent(self):
+        '''
+        Reads exponent part of number
+        '''
         exponent = ""
         self.read(whitespaces=True)
         
@@ -194,11 +199,9 @@ class JSONLexer():
         
         return exponent
             
-            
-    
     def readInteger(self):
         '''
-        Reads integer to string
+        Reads integer and puts it into string
         '''
         integer = ""
         if self.lastChar == '-':
