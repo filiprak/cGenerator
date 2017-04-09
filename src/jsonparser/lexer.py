@@ -7,7 +7,7 @@ recognizes tokens, outputs token table
 
 from .constants import Token
 from errors import LexerError
-from __builtin__ import str
+from __builtin__ import str, int
 
 
 """ helper functions """
@@ -73,10 +73,10 @@ class JSONLexer():
                 literal = self.readLiteral()
                 result.append( (self.currentLine, Token.LITERAL, literal) )
             elif isDigit(currentChar):
-                number = self.readInteger()
+                number = self.readNumber()
                 result.append( (self.currentLine, Token.NUMBER, number) )
             elif currentChar == '-':
-                number = self.readInteger()
+                number = self.readNumber()
                 result.append( (self.currentLine, Token.NUMBER, number) )   
             elif currentChar == '"':
                 string = self.readString()
@@ -119,16 +119,6 @@ class JSONLexer():
         # looking for next character
         if self.currentPosition + 1 == self.bufferSize:
             self.nextChar = None
-        elif not whitespaces:
-            # skipping whitespaces
-            i = self.currentPosition + 1
-            self.nextChar = self.bufferSting[i]
-            while isWhitespace(self.nextChar):
-                i += 1
-                if i == self.bufferSize:
-                    self.nextChar = None
-                    break
-                self.nextChar = self.bufferSting[i]
         else:
             self.nextChar = self.bufferSting[self.currentPosition + 1]
 
@@ -153,24 +143,58 @@ class JSONLexer():
         return string
     
     
-    """def readNumber(self):
+    def readNumber(self):
        
-        if self.lastChar == '0':
-            if self.nextChar != '.':
-                number += "0."
-                while isDigit(self.read()):
-                    number += self.lastChar
-                    
-                
+        number = self.readInteger()
+        
+        if self.nextChar == '.':
+            self.read(whitespaces=True)
+            number += '.'
+            number += self.readFraction()
+            if self.nextChar == 'E' or self.nextChar == 'e':    
+                self.read(whitespaces=True)
+                number += self.lastChar
+                number += self.readExponent()
+            return number
+        
+        elif self.nextChar == 'E' or self.nextChar == 'e':    
+            self.read(whitespaces=True)
+            number += self.lastChar
+            number += self.readExponent()
+           
+        return number
+    
+    def readExponent(self):
+        exponent = ""
+        self.read(whitespaces=True)
+        
+        if isDigit(self.lastChar):
+            exponent += self.lastChar
+            while isDigit(self.nextChar):
+                self.read(whitespaces=True)
+                exponent += self.lastChar
+            return exponent
+        
+        elif self.lastChar == '-' or self.lastChar == '+':
+            exponent += self.lastChar
+            self.read(whitespaces=True)
+            if isDigit(self.lastChar):
+                exponent += self.lastChar
+                while isDigit(self.nextChar):
+                    self.read(whitespaces=True)
+                    exponent += self.lastChar
+                return exponent
             else:
-                return "0"
+                raise LexerError(self.errorMessage(token="bad exponent format"),
+                                 self.getFileLine(self.currentLine) )
+                
         else:
-            raise
-        while self.lastChar:
+            raise LexerError(self.errorMessage(token="bad exponent format"),
+                                 self.getFileLine(self.currentLine) )
+        
+        return exponent
             
-            self.read()
             
-        return number"""
     
     def readInteger(self):
         '''
@@ -179,7 +203,7 @@ class JSONLexer():
         integer = ""
         if self.lastChar == '-':
             integer += '-'
-            self.read()
+            self.read(whitespaces=True)
         
         if not isDigit(self.lastChar):
             raise LexerError(self.errorMessage(token="bad number format"),
@@ -187,12 +211,31 @@ class JSONLexer():
         if not isDigit(self.nextChar):
             return integer + self.lastChar
         
+        if self.lastChar == '0':
+            raise LexerError(self.errorMessage(token="bad zero format"),
+                                 self.getFileLine(self.currentLine) )
+        
         integer += self.lastChar
+        
         while isDigit(self.nextChar):
-            self.read()
+            self.read(whitespaces=True)
             integer += self.lastChar
         return integer
+    
+    def readFraction(self):
+        fraction = ""
+        self.read(whitespaces=True)
         
+        if isDigit(self.lastChar):
+            fraction += self.lastChar
+            while isDigit(self.nextChar):
+                self.read(whitespaces=True)
+                fraction += self.lastChar
+            return fraction
+        else:
+            raise LexerError(self.errorMessage(token="bad fraction part format"),
+                                 self.getFileLine(self.currentLine) )
+        return fraction
     
     def readLiteral(self):
         '''
