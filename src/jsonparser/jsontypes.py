@@ -1,7 +1,7 @@
 '''
 Created on 09.04.2017
 JSON types such as JSONPair, JSONString, ..
-They hold values of proper types
+They hold values of proper json types
 @author: raqu
 '''
 
@@ -78,21 +78,36 @@ class JSONString(object):
     def __init__(self, string=""):
         self.string = string
 
+    def matches(self, string):
+        if string == None:
+            return False
+        return self.string == string
 
 class JSONNumber(object):
-    def __init__(self, number=0):
+    def __init__(self, number=""):
         self.number = number
-        self.value = self.convert()
-    
-    def convert(self):
-        # todo
-        return 0
+        self.value = float(number)
     
     def isInteger(self):
-        # todo
-        return True
-        
+        return float(self.number) == int(float(self.number))
+    
+    def isFloat(self):
+        return not self.isInteger()
+    
+    def getValue(self):
+        return self.value
+    
+    
 class JSONLiteral(object):
     def __init__(self, literal="null"):
         self.literal = literal
+
+    def isTrue(self):
+        return self.literal == "true"
+
+    def isNull(self):
+        return self.literal == "null"
+
+    def isFalse(self):
+        return self.literal == "false"
 
