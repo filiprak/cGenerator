@@ -334,6 +334,12 @@ class JSONLexer():
         
         self.fileLoaded = True
         self.currentFile = filename
+        # reset state if loading again
+        self.lastChar = None
+        self.nextChar = None
+        self.currentPosition = 0
+        self.currentLine = 1
+        
         return self.bufferSting, len(self.bufferSting)
     
     
