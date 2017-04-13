@@ -56,7 +56,10 @@ class JSONArray(object):
     def __init__(self):
         self.elements = dict()
         self.size = 0
-        
+    
+    def empty(self):
+        return self.size == 0
+    
     def insert(self, element):
         self.elements[self.size] = element
         self.size += 1
