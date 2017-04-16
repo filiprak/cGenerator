@@ -48,7 +48,7 @@ def testLexerRead(withWhSpaces, trace=False):
     
         
 """run tests JSONLexer.read()"""
-testLexerRead(True)
+testLexerRead(True, trace=True)
 testLexerRead(False)
 
 
