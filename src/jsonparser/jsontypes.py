@@ -22,7 +22,30 @@ class JSONObject(object):
         names = []
         for pair in self.pairs:
             names.append(pair.name)
-        
+    
+    def empty(self):
+        return len(self.pairs) == 0
+    
+    def hasPair(self, jsonpair):
+        if jsonpair == None:
+            return False
+        for pair in self.pairs:
+            if pair.equals(jsonpair):
+                return True
+        return False
+    
+    def equals(self, jsonobject):
+        if self.empty() and not jsonobject.empty():
+            return False
+        if not self.empty() and jsonobject.empty():
+            return False
+        if len(self.pairs) != len(jsonobject.pairs):
+            return False
+        for pair in self.pairs:
+            if not jsonobject.hasPair(pair):
+                return False
+        return True
+            
         
 class JSONPair(object):
     '''
@@ -47,6 +70,9 @@ class JSONPair(object):
     
     def holdsLiteral(self):
         return self.value.__class__ == JSONLiteral().__class__
+    
+    def equals(self, jsonpair):
+        return self.name == jsonpair.name and self.value.equals(jsonpair.value)
 
 
 class JSONArray(object):
@@ -86,6 +112,14 @@ class JSONArray(object):
     def holdsLiteral(self, index):
         return self.getElement(index).__class__ == JSONLiteral().__class__
 
+    def equals(self, jsonarray):
+        if self.size != jsonarray.size:
+            return False
+        for i in range(self.size):
+            if not self.elements[i].equals(jsonarray.elements[i]):
+                return False
+        return True
+
 
 class JSONString(object):
     '''
@@ -99,6 +133,10 @@ class JSONString(object):
             return False
         return self.string == string
 
+    def equals(self, jsonstring):
+        return self.string == jsonstring.string
+    
+    
 class JSONNumber(object):
     '''
     Represents json number, can be float, integer, positive or negative number
@@ -118,6 +156,9 @@ class JSONNumber(object):
     def getValue(self):
         return self.value
     
+    def equals(self, jsonnum):
+        return self.value == jsonnum.value
+    
     
 class JSONLiteral(object):
     '''
@@ -135,3 +176,7 @@ class JSONLiteral(object):
     def isFalse(self):
         return self.literal == "false"
 
+    def equals(self, jsonliter):
+        return self.literal == jsonliter.literal
+    
+    
