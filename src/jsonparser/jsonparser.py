@@ -19,19 +19,21 @@ class JSONParser():
         self.tokenized = None
         self.currToken = None
         self.tokenizedSize = 0
-        self.currentPosition = 0
+        self.currentPosition = -1
         
         
     def nextToken(self):
         if self.currentPosition >= self.tokenizedSize:
             return None
-        (line, token, string) = self.tokenized[self.currentPosition]
         self.currentPosition += 1
+        (line, token, string) = self.tokenized[self.currentPosition]
         self.currToken = token
         return token
     
     
     def tokenInfo(self):
+        if self.currentPosition < 0:
+            return None, None, None
         (line, token, string) = self.tokenized[self.currentPosition]
         return line, token, string
         
@@ -47,7 +49,7 @@ class JSONParser():
         self.tokenized = tokenized
         self.tokenizedSize = len(tokenized)
         self.currToken = None
-        self.currentPosition = 0
+        self.currentPosition = -1
         
         if self.nextToken() != Token.BEGIN_OBJECT:
             line, token, string = self.tokenInfo()
@@ -66,7 +68,7 @@ class JSONParser():
         pair = self.parseJSONPair()
         jsonobject.append(pair)
         
-        while self.nextToken():
+        while self.nextToken() != None:
             if self.currToken == Token.END_OBJECT:
                 return jsonobject
             if self.currToken != Token.COMA:
@@ -84,7 +86,7 @@ class JSONParser():
     def parseJSONArray(self):
         jsonarray = JSONArray()
         
-        while self.nextToken():
+        while self.nextToken() != None:
             if self.currToken == Token.END_ARRAY:
                 return jsonarray
             
@@ -125,7 +127,7 @@ class JSONParser():
     
     def parseJSONNumber(self):
         line, token, string = self.tokenInfo()
-        if self.currToken != Token.STRING:
+        if self.currToken != Token.NUMBER:
             raise ParserError(self.errorMessage(token=string, expected="number value"), line)
         
         return JSONNumber(string)
@@ -160,7 +162,7 @@ class JSONParser():
     
     def parseJSONLiteral(self):
         line, token, string = self.tokenInfo()
-        if self.currToken != Token.STRING:
+        if self.currToken != Token.LITERAL:
             raise ParserError(self.errorMessage(token=string, expected="one of: null | false | true"), line)
         
         return JSONLiteral(string)
