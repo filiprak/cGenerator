@@ -1,6 +1,6 @@
 '''
 Created on 21.03.2017
-JSON files parser
+JSON parser module
 @author: raqu
 '''
 
@@ -23,6 +23,9 @@ class JSONParser():
         
         
     def nextToken(self):
+        '''
+        Reads next token from tokenized file, and return its code (Token.*)
+        '''
         if self.currentPosition >= self.tokenizedSize:
             return None
         self.currentPosition += 1
@@ -32,6 +35,9 @@ class JSONParser():
     
     
     def tokenInfo(self):
+        '''
+        Returns line number, token code and token string value of current token.
+        '''
         if self.currentPosition < 0:
             return None, None, None
         (line, token, string) = self.tokenized[self.currentPosition]
@@ -42,6 +48,7 @@ class JSONParser():
         '''
         Parses tokenized json to object tree
         :param tokenized: token list of tuples (lineNr, tokenType, value)
+        :param filename: name of parsed file
         '''
         if tokenized == None:
             return None
@@ -59,6 +66,9 @@ class JSONParser():
     
     
     def parseJSONObject(self):
+        '''
+        Parses json object, returns JSONObject
+        '''
         jsonobject = JSONObject()
         
         self.nextToken()
@@ -84,6 +94,9 @@ class JSONParser():
     
     
     def parseJSONArray(self):
+        '''
+        Parses json array, returns JSONArray object
+        '''
         jsonarray = JSONArray()
         
         while self.nextToken() != None:
@@ -118,6 +131,9 @@ class JSONParser():
     
     
     def parseJSONString(self):
+        '''
+        Parses json string, returns JSONString object.
+        '''
         line, token, string = self.tokenInfo()
         if self.currToken != Token.STRING:
             raise ParserError(self.errorMessage(token=string, expected="quoted string value"), line)
@@ -126,6 +142,9 @@ class JSONParser():
     
     
     def parseJSONNumber(self):
+        '''
+        Parses json number, returns JSONNumber object.
+        '''
         line, token, string = self.tokenInfo()
         if self.currToken != Token.NUMBER:
             raise ParserError(self.errorMessage(token=string, expected="number value"), line)
@@ -134,6 +153,9 @@ class JSONParser():
 
 
     def parseJSONPair(self):
+        '''
+        Parses one json pair, returns JSONPair object.
+        '''
         line, token, string = self.tokenInfo()
         if self.currToken != Token.STRING:
             raise ParserError(self.errorMessage(expected=" value name, format: <name>:<value>"), line)
@@ -161,6 +183,9 @@ class JSONParser():
     
     
     def parseJSONLiteral(self):
+        '''
+        Parses json literal: null, true, false, returns proper JSONLiteral object.
+        '''
         line, token, string = self.tokenInfo()
         if self.currToken != Token.LITERAL:
             raise ParserError(self.errorMessage(token=string, expected="one of: null | false | true"), line)
@@ -178,7 +203,7 @@ class JSONParser():
         if token:
             message += ": " + token
         if expected:
-            message += ", expected: " + str(expected)
+            message += " -expected: " + str(expected)
             
         line, t, s = self.tokenInfo()
         return str(self.currentFile) + ": line: " + str(line) + ": " + message 
