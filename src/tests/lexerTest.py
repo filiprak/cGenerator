@@ -3,7 +3,9 @@ Created on 16.04.2017
 Script prints output tokens from lexer analize
 @author: raqu
 '''
-
+import os
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.sys.path.insert(0,parentdir) 
 from jsonparser.lexer import JSONLexer
 
 
