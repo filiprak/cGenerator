@@ -22,6 +22,19 @@ class JSONObject(object):
         names = []
         for pair in self.pairs:
             names.append(pair.name)
+        return names
+    
+    def getPairValue(self, name):
+        for pair in self.pairs:
+            if pair.name == name:
+                return pair.value
+        return None
+    
+    def getPair(self, name):
+        for pair in self.pairs:
+            if pair.name == name:
+                return pair
+        return None
     
     def empty(self):
         return len(self.pairs) == 0
@@ -97,17 +110,32 @@ class JSONArray(object):
             return None
         return self.elements[index]
     
+    def getElements(self):
+        return self.elements.values()
+    
     def holdsNumber(self, index):
         return self.getElement(index).__class__ == JSONNumber().__class__
     
     def holdsString(self, index):
         return self.getElement(index).__class__ == JSONString().__class__
     
+    def holdsOnlyStrings(self):
+        for element in self.elements.values():
+            if element.__class__ != JSONString().__class__:
+                return False
+        return True
+    
     def holdsArray(self, index):
         return self.getElement(index).__class__ == JSONArray().__class__
     
     def holdsObject(self, index):
         return self.getElement(index).__class__ == JSONObject().__class__
+    
+    def holdsOnlyObjects(self):
+        for element in self.elements.values():
+            if element.__class__ != JSONObject().__class__:
+                return False
+        return True
     
     def holdsLiteral(self, index):
         return self.getElement(index).__class__ == JSONLiteral().__class__
