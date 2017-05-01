@@ -26,7 +26,7 @@ class JSONParser():
         '''
         Reads next token from tokenized file, and return its code (Token.*)
         '''
-        if self.currentPosition >= self.tokenizedSize:
+        if not self.currentPosition < self.tokenizedSize - 1:
             return None
         self.currentPosition += 1
         (line, token, string) = self.tokenized[self.currentPosition]
