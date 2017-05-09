@@ -1,11 +1,14 @@
 '''
 Created on 04.05.2017
 Module contains C object types classes representations in python
-Objects have method str() overriden
+Objects have method str() overriden so they can be serialized to
+text form by calling str(object). Text form is gramatically valid
+for C language (in C99 standard).
 @author: raqu
 '''
 from errors import CSerializeError
 
+# helper func for indenting multiline string
 def indent(string, nrtabs=1):
     padding = ""
     for i in range(nrtabs):
@@ -14,15 +17,22 @@ def indent(string, nrtabs=1):
 
 
 class CPreprocConstDefine():
+    '''
+    Represents C preprocessor define: #define name value
+    '''
     def __init__(self, name, value):
         self.name = name
         self.value = value
     
     def __str__(self):
-        return "#define {}/t{}".format(str(self.name), str(self.value))
+        return "#define {}\t{}".format(str(self.name), str(self.value))
         
 
 class CVarType():
+    '''
+    Represents declaration of C variable
+    Can be simple or structured type 
+    '''
     def __init__(self, variabletype, name):
         self.variabletype = variabletype
         if not isinstance(variabletype, str):
@@ -34,7 +44,16 @@ class CVarType():
                                str(self.name))
 
 class CVarAssign():
+    '''
+    Represents variable assign C code snippet.
+    Can only be simple type, not structured.
+    '''
     def __init__(self, vartype, value, attrib=False):
+        '''
+        :param vartype: CVarType variable type
+        :param value: represents value of variable
+        :param attrib: should be set 'True' if variable is part of structured type
+        '''
         self.vartype = vartype
         self.value = value
         self.attrib = attrib
@@ -48,7 +67,15 @@ class CVarAssign():
                                     str(self.value))
     
 class CTypedef():
+    '''
+    Representation of C typedef code snippet
+    Can be used for structured and simple types
+    '''
     def __init__(self, covered, typename):
+        '''
+        :param covered: covered type (structural(object) or simple - string)
+        :param typename: name of new type
+        '''
         self.covered = covered
         if not isinstance(covered, str):
             self.covered.semicol = False
@@ -58,7 +85,15 @@ class CTypedef():
         return "typedef {} {};".format(str(self.covered), str(self.typename))
 
 class CEnumType():
+    '''
+    Represents enum declaration C code snippet
+    '''
     def __init__(self, name, values, semicol=True):
+        '''
+        :param name: enum name
+        :param values: list of string values that will be enumerated
+        :param semicol: flag, if ";" should be put at the end then 'True'
+        '''
         self.name = name
         self.values = values
         self.semicol = semicol
@@ -76,23 +111,43 @@ class CEnumType():
             string += ";"
         return string
 
+
 class EnumAssign():
-    def __init__(self, enumtype, name, value, semicol=True):
+    '''
+    Represents enum variable assignment C code snippet
+    '''
+    def __init__(self, enumtype, name, value, semicol=True, attrib=False):
+        '''
+        :param enumtype: CEnumType object
+        :param name: variable identifier
+        :param value: assigned value (string format)
+        '''
         self.enumtype = enumtype
         self.name = name
         self.value = value
+        self.attrib = attrib
         self.semicol = semicol
     
     def __str__(self):
-        string = "enum {} {} = {}".format(str(self.enumtype.name),
-                                         str(self.name),
-                                         str(self.value))
+        string = "enum " + str(self.enumtype.name) + " "
+        if self.attrib:
+            string = "."
+        string += "{} = {}".format(str(self.name),
+                                        str(self.value))
         if self.semicol:
             string += ";"
         return string
 
+
 class CStructType():
+    '''
+    Represents struct type declaration C code snippet
+    '''
     def __init__(self, structname, attributes=[], semicol=True):
+        '''
+        :param structname: name of struct type 'struct <structname> {...'
+        :param attributes: list of struct attributes (C*Type objects)
+        '''
         self.structname = structname
         self.attributes = attributes
         self.semicol = semicol
@@ -109,8 +164,18 @@ class CStructType():
             string += ";"
         return string
 
+
 class CStructAssign():
+    '''
+    Represents struct variable assign C code snippet
+    '''
     def __init__(self, structtype, name, values, typedef=None, semicol=True, attrib=False):
+        '''
+        :param structtype: CStructType object
+        :param name: variable identifier
+        :param values: dict of attributes values
+        :param typedef: type name that covers struct type (string format)
+        '''
         self.structtype = structtype
         self.name = name
         self.typedef = typedef
@@ -156,8 +221,16 @@ class CStructAssign():
             string += ";"
         return string
 
+
 class CUnionType():
+    '''
+    Represents union type declaration C code snippet
+    '''
     def __init__(self, unionname, attributes=[], semicol=True):
+        '''
+        :param unionname: name of union type 'union <unionname> {...'
+        :param attributes: list of union attributes (C*Type objects)
+        '''
         self.unionname = unionname
         self.attributes = attributes
         self.semicol = semicol
@@ -174,8 +247,18 @@ class CUnionType():
             string += ";"
         return string
 
+
 class CUnionAssign():
+    '''
+    Represents union variable assign C code snippet
+    '''
     def __init__(self, uniontype, name, value, typedef=None, semicol=True, attrib=False):
+        '''
+        :param uniontype: CUnionType object
+        :param name: variable identifier
+        :param value: dict of one value to assign
+        :param typedef: type name that covers union type (string format)
+        '''
         self.uniontype = uniontype
         self.name = name
         self.value = value
@@ -219,9 +302,18 @@ class CUnionAssign():
         if self.semicol:
             string += ";"
         return string
-    
+
+  
 class CArrayType():
+    '''
+    Represents array declaration C code snippet
+    '''
     def __init__(self, valtype, name, size):
+        '''
+        :param valtype: type of elements
+        :param name: array identifier
+        :param size: array size
+        '''
         self.valtype = valtype
         self.name = name
         self.size = size
@@ -229,8 +321,16 @@ class CArrayType():
     def __str__(self):
         return "{} {}[{}];".format(str(self.valtype), str(self.name), str(self.size))
 
+
 class CArrayAssign():
+    '''
+    Represents array initialization C code snippet
+    '''
     def __init__(self, arrtype, values, attrib=False, semicol=False):
+        '''
+        :param arrtype: CArrayType object
+        :param values: list of elements
+        '''
         self.arrtype = arrtype
         self.values = values
         self.attrib = attrib
@@ -258,7 +358,7 @@ class CArrayAssign():
 
 
 
-"""testing -------------------------------------------------------------------------------"""
+"""testing -------------------------------------------------------------------------------
 
 vart = CVarType("int", "number")
 var = CVarAssign(vart, 4e55)
@@ -293,5 +393,5 @@ print(str(varstruct))
 
 print(str(uniontypedef))
 print(str(uniona))
-
+"""
         
