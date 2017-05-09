@@ -43,8 +43,9 @@ class SemanticAnalyzer():
             if modulenamePair in modulesDict.keys():
                 raise LogicError(filename, "Duplicated module names.")
             modules = []
-            for imported in importsPair.value.getElements():
-                modules.append(imported.string)
+            if importsPair:
+                for imported in importsPair.value.getElements():
+                    modules.append(imported.string)
             modulesDict[modulenamePair.value.string] = modules
         
         sortedModules = []
@@ -57,7 +58,7 @@ class SemanticAnalyzer():
                     sortedModules.append(module)
                     modules.remove(module)
             if before == len(sortedModules) and len(modules) != 0:
-                raise LogicError(filename, "Cannot resolve module dependencies in {}".format(modules))
+                raise LogicError("dependency check", "Cannot resolve module dependencies in {}".format(modules))
             if before == len(sortedModules) and len(modules) == 0:
                 break
         
