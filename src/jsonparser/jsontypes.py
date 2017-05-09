@@ -171,7 +171,7 @@ class JSONNumber(object):
     value is converted from given string number representation to float value
     value is interpreted as integer when it fraction part equals 0
     '''
-    def __init__(self, number=""):
+    def __init__(self, number="0"):
         self.number = number
         self.value = float(number)
     
