@@ -31,6 +31,13 @@ class LogicError(Exception):
     def __str__(self):
         return repr(self.message)
 
+class CSerializeError(Exception):
+    
+    def __init__(self, message):
+        self.message = "CGenerationError: " + str(message)
+        
+    def __str__(self):
+        return repr(self.message)
 
 
 
