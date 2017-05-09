@@ -20,6 +20,7 @@ class JSONParser():
         self.currToken = None
         self.tokenizedSize = 0
         self.currentPosition = -1
+        self.enumerated = None
         
         
     def nextToken(self):
@@ -57,6 +58,7 @@ class JSONParser():
         self.tokenizedSize = len(tokenized)
         self.currToken = None
         self.currentPosition = -1
+        self.enumerated = dict()
         
         if self.nextToken() != Token.BEGIN_OBJECT:
             line, token, string = self.tokenInfo()
@@ -70,6 +72,8 @@ class JSONParser():
         Parses json object, returns JSONObject
         '''
         jsonobject = JSONObject()
+        line, token, string = self.tokenInfo()
+        self.enumerated[jsonobject] = line
         
         self.nextToken()
         if self.currToken == Token.END_OBJECT:
