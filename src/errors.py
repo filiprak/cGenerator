@@ -25,8 +25,8 @@ class ParserError(Exception):
 
 class LogicError(Exception):
     
-    def __init__(self, filename, message):
-        self.message = "SemanticError: " + str(filename) + ": "+ str(message)
+    def __init__(self, filename, message, line):
+        self.message = "SemanticError: " + str(filename) + ": line:" + str(line)+ ": " + str(message)
         
     def __str__(self):
         return repr(self.message)
