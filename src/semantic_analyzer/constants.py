@@ -39,3 +39,19 @@ reservedCKeywords = [
         "while"
     ]
 
+asn1types = [
+    "BOOLEAN",
+    "INTEGER",
+    "REAL",
+    "BIT STRING",
+    "OCTET STRING",
+    "CHARACTER STRING",
+    "ENUMERATED",
+    "SEQUENCE",
+    "SEQUENCE OF",
+    "SET",
+    "SET OF",
+    "CHOICE"
+    ]
+
+
