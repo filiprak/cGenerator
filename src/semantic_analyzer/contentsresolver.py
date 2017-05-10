@@ -1,17 +1,20 @@
 '''
 Created on 07.05.2017
-
+Contents resolver module aims to read definitions and declarations
+from json description and translate them into C types declaration and definition
 @author: raqu
 '''
 import re
 from generator.ctypes import CVarType, CTypedef, CPreprocConstDefine, CArrayType,\
-    CStructType, CEnumType
+    CStructType, CEnumType, CUnionType
 from jsonparser.jsonparser import JSONParser
 from jsonparser.lexer import JSONLexer
 from errors import LexerError, ParserError, LogicError, CSerializeError
 from semantic_analyzer.constants import reservedCKeywords, asn1types
+from semantic_analyzer.defresolver import DefinitionResolver
 
-# helper functions
+
+# helper functions for validation c indentifiers and typenames
 def validCTypename(typename):
     if typename in reservedCKeywords:
         return False
@@ -27,33 +30,85 @@ def validCidentifier(identifier):
     return re.match("^[_a-zA-Z][_a-zA-Z0-9]*$" , identifier) != None
 
 
-class Interpreter():
+class ContentsResolver():
+    '''
+    Contents resolver is responsible for reading definitions and declarations
+    from json description and translating them into C types declaration and definition
+    '''
     def __init__(self):
         self.defines = []
         self.declarations = []
         self.definitions = []
         
-        self.typesMetadata = dict()
+        self.defResolver = DefinitionResolver(self.declarations, self.defines)
         
         self.currentFile = None
-        self.enumerated = None
+        self.jsonFilelines = None
         
     
-    def interpret(self, filesOrder, parsedDict, enumerated):
-        self.enumerated = enumerated
+    def resolve(self, filesOrder, parsedDict, jsonFilelines):
+        '''
+        Main resolver function, starts resolving
+        :param filesOrder: list of filenames in processing order
+        :param parsedDict: dict: key: filename, value: parsed file as JSONObject
+        :param jsonFilelines: dict: key: filename, value: dict (key: jsonobj, value: line nr)
+        '''
         
         for filename in filesOrder:
             self.currentFile = filename
+            self.jsonFilelines = jsonFilelines[filename]
             parsed = parsedDict[filename]
+            contentsObjects = self.validModuleContentsPair(parsed)
             
-            self.declarations.append(self.typeSEQUENCE(parsed))
+            for jsonobj in contentsObjects:
+                if jsonobj.getPair("typeName"):
+                    coveredtype = self.validTypenamePair(jsonobj, attrib=True)
+                    typedef = None
+                    if coveredtype == "BOOLEAN":
+                        typedef = self.typeBOOLEAN(jsonobj)
+                    elif coveredtype == "INTEGER":
+                        typedef = self.typeINTEGER(jsonobj)
+                    elif coveredtype == "REAL":
+                        typedef = self.typeREAL(jsonobj)
+                    elif coveredtype == "BIT STRING":
+                        typedef = self.typeBIT_STRING(jsonobj)
+                    elif coveredtype == "OCTET STRING":
+                        typedef = self.typeOCTET_STRING(jsonobj)
+                    elif coveredtype == "CHARACTER STRING":
+                        typedef = self.typeCHARACTER_STRING(jsonobj)
+                    elif coveredtype == "ENUMERATED":
+                        typedef = self.typeENUMERATED(jsonobj)
+                    elif coveredtype == "SEQUENCE":
+                        typedef = self.typeSEQUENCE(jsonobj)
+                    elif coveredtype == "SEQUENCE OF":
+                        typedef = self.typeSEQUENCE_OF(jsonobj)
+                    elif coveredtype == "SET":
+                        typedef = self.typeSET(jsonobj)
+                    elif coveredtype == "SET OF":
+                        typedef = self.typeSET_OF(jsonobj)
+                    elif coveredtype == "CHOICE":
+                        typedef = self.typeCHOICE(jsonobj)
+                    else: #user defined type
+                        raise self.ContextLogicError("User defined type '{}' cannot be overriden", jsonobj)
+                    self.declarations.append(typedef)
+                elif jsonobj.getPair("objectName"):
+                    defin = self.defResolver.resolve(filename, jsonobj, jsonFilelines)
+                    self.definitions.append(defin)
+                else:
+                    raise self.ContextLogicError("Required 'typeName' or 'objectType' value here", jsonobj)
             
-        return self.declarations, self.definitions
+        return self.declarations, self.definitions, self.defines
     
-    
-    def typeBOOLEAN(self, jsonobj):
-        result = self.typeINTEGER(jsonobj)
-        defines = [None, None]
+    '''
+    This methods resolves single jsonobj user-defined type declarations
+    parametres: jsonobj - JSONObject with single declaration of proper covered type
+                attrib - 'true' if object have to be treated as inner type attribute
+    returns:
+                CTypedef object - resolved from JSONObject description of covered
+                                ASN.1 types
+    '''
+    def typeBOOLEAN(self, jsonobj, attrib=False):
+        result = self.typeINTEGER(jsonobj, attrib)
         optional = dict()
         
         if jsonobj.getPair("true-value"):
@@ -72,22 +127,22 @@ class Interpreter():
             # check if typename is valid in C
             if not validCTypename(optional[boolvalue]):
                 raise self.ContextLogicError("Type name: '{}' is not valid in C".format(optional[boolvalue]), jsonobj)
-            defines[boolvalue] = CPreprocConstDefine(optional[boolvalue], boolvalue)
-        return result, defines
+            self.defines.append(CPreprocConstDefine(optional[boolvalue], boolvalue))
+        return result
     
-    
-    def typeINTEGER(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)                
+    def typeINTEGER(self, jsonobj, attrib=False):
+        typestring = self.validTypenamePair(jsonobj, attrib)
+        metadata = dict()            
         if jsonobj.getPair("min"):
             val = self.validConstraintPair(jsonobj, "min")
-            self.addTypeMetadata(typestring, "min", int(val))
+            metadata["min"] = int(val)
         
         if jsonobj.getPair("max"):
             val = self.validConstraintPair(jsonobj, "max")
-            self.addTypeMetadata(typestring, "max", int(val))
+            metadata["max"] = int(val)
             
-            if "min" in self.typesMetadata[typestring]:
-                if self.typesMetadata[typestring]["min"] > int(val):
+            if "min" in metadata:
+                if metadata["min"] > int(val):
                     raise self.ContextLogicError("Bad INTEGER constraints: min > max", jsonobj)
         
         ctype = "int"
@@ -100,47 +155,59 @@ class Interpreter():
             else:
                 raise self.ContextLogicError("Illegal encoding property for INTEGER type", jsonobj)
             
-            self.addTypeMetadata(typestring, "encoding", encoding)
+            metadata["encoding"] = encoding
         
-        return CTypedef(ctype, typestring)
+        return CTypedef(ctype, typestring, metadata)
     
-    def typeBIT_STRING(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)
+    def typeBIT_STRING(self, jsonobj, attrib=False):
+        typestring = self.validTypenamePair(jsonobj, attrib)
         if not jsonobj.getPair("size"):
             raise self.ContextLogicError("Size constraint must be specified for BIT STRING: 'size':<integer>", jsonobj)
         size = self.validConstraintPair(jsonobj, "size")
         nrints = int(size / 32) + 1
         bitarrayt = CArrayType("int", "bitarray", nrints)
-        structt = CStructType(typestring, [bitarrayt])
+        structt = CStructType([bitarrayt])
         typedef = CTypedef(structt, typestring)
         return typedef
     
-    def typeCHARACTER_STRING(self, jsonobj):
-        return self.typeOCTET_STRING(jsonobj)
+    def typeCHARACTER_STRING(self, jsonobj, attrib=False):
+        typedef = self.typeOCTET_STRING(jsonobj)
+        
+        return typedef
     
-    def typeOCTET_STRING(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)
+    def typeOCTET_STRING(self, jsonobj, attrib=False):
+        typestring = self.validTypenamePair(jsonobj, attrib)
         if not jsonobj.getPair("size"):
             raise self.ContextLogicError("Size constraint must be specified for CHAR/OCTET STRING: 'size':<integer>", jsonobj)
         size = self.validConstraintPair(jsonobj, "size")
+        
+        metadata = dict()
+        if jsonobj.getPair("encoding"):
+            encoding = self.validEncodingPair(jsonobj)
+            if encoding == "ASCII":
+                metadata["encoding"] = encoding
+            else:
+                raise self.ContextLogicError("Illegal encoding property for CHAR/OCTET STRING type", jsonobj)
+        
         chararrayt = CArrayType("char", "bytes", int(size))
-        structt = CStructType(typestring, [chararrayt])
-        typedef = CTypedef(structt, typestring)
+        structt = CStructType([chararrayt])
+        typedef = CTypedef(structt, typestring, metadata)
         return typedef
     
-    def typeREAL(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)                
+    def typeREAL(self, jsonobj, attrib=False):
+        typestring = self.validTypenamePair(jsonobj, attrib)
+        metadata = dict()               
         if jsonobj.getPair("min"):
             val = self.validConstraintPair(jsonobj, "min")
-            self.addTypeMetadata(typestring, "min", float(val))
+            metadata["min"] = float(val)
         
         if jsonobj.getPair("max"):
             val = self.validConstraintPair(jsonobj, "max")
-            self.addTypeMetadata(typestring, "max", float(val))
+            metadata["max"] = float(val)
             
-            if "min" in self.typesMetadata[typestring]:
-                if self.typesMetadata[typestring]["min"] > float(val):
-                    raise self.ContextLogicError("Bad FLOAT constraints: min > max", jsonobj)
+            if "min" in metadata:
+                if metadata["min"] > float(val):
+                    raise self.ContextLogicError("Bad REAL constraints: min > max", jsonobj)
                 
         ctype = "double"
         if jsonobj.getPair("encoding"):
@@ -154,13 +221,13 @@ class Interpreter():
             else:
                 raise self.ContextLogicError("Illegal encoding property for REAL type", jsonobj)
             
-            self.addTypeMetadata(typestring, "encoding", encoding)
+            metadata["encoding"] = encoding
         
-        return CTypedef(ctype, typestring)
+        return CTypedef(ctype, typestring, metadata)
     
-    def typeENUMERATED(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)
-        error = self.ContextLogicError("Enumerated strings specification required in format: 'contents':[str1, str2, ...]", jsonobj)
+    def typeENUMERATED(self, jsonobj, attrib=False):
+        typestring = self.validTypenamePair(jsonobj, attrib)
+        error = self.ContextLogicError("ENUMERATED strings specification required in format: 'contents':[str1, str2, ...]", jsonobj)
         if not jsonobj.getPair("contents"):
             raise error
         if not jsonobj.getPair("contents").holdsArray():
@@ -171,15 +238,17 @@ class Interpreter():
         enumvalues = []
         for jstring in jsonstrings:
             if not validCTypename(jstring.string):
-                raise self.ContextLogicError("Enumerated string '{}' is illegal C enum value".format(jstring.string), jsonobj)
+                raise self.ContextLogicError("ENUMERATED string '{}' is illegal value".format(jstring.string), jsonobj)
+            if jstring.string in enumvalues:
+                raise self.ContextLogicError("ENUMERATED value '{}' duplication".format(jstring.string), jsonobj)
             enumvalues.append(jstring.string)
-        cenumt = CEnumType(typestring, enumvalues)
+        cenumt = CEnumType(enumvalues)
         typedef = CTypedef(cenumt, typestring)
         return typedef
     
-    def typeSEQUENCE(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)
-        error = self.ContextLogicError("Struct attributes specification required in format: 'contents':[obj1, obj2, ...]", jsonobj)
+    def typeSEQUENCE(self, jsonobj, attrib=False):
+        typestring = self.validTypenamePair(jsonobj, attrib)
+        error = self.ContextLogicError("SEQUENCE attributes specification required in format: 'contents':[obj1, obj2, ...]", jsonobj)
         if not jsonobj.getPair("contents"):
             raise error
         if not jsonobj.getPair("contents").holdsArray():
@@ -188,91 +257,151 @@ class Interpreter():
             raise error
         jsonattrobjs = jsonobj.getPairValue("contents").getElements()
         structattribs = []
+        attrnames = []
         for attribobj in jsonattrobjs:
             attrib = self.validTypeAttribute(attribobj)
+            if attrib.name in attrnames:
+                raise self.ContextLogicError("Duplication of SEQUENCE attribute identifiers: {}".format(attrib.name), jsonobj)
             structattribs.append(attrib)
+            attrnames.append(attrib.name)
         
-        structt = CStructType(typestring, structattribs)
+        structt = CStructType(structattribs)
         typedef = CTypedef(structt, typestring)
         return typedef
     
-    def typeSEQUENCE_OF(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)
-        
-        return
+    def typeSEQUENCE_OF(self, jsonobj, attrib=False):
+        typestring = self.validTypenamePair(jsonobj, attrib)
+        size = self.validConstraintPair(jsonobj, "size")
+        subobj = self.validSubtypePair(jsonobj)
+        subattrt = self.validTypeAttribute(subobj, subtype=True)
+        arrayt = CArrayType(subattrt.variabletype, "elements", int(size))
+        structt = CStructType([ arrayt ])
+        return CTypedef(structt, typestring)
     
-    def typeSET(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)
-        
-        return
+    def typeSET(self, jsonobj, attrib=False):
+        return self.typeSEQUENCE(jsonobj, attrib)
     
-    def typeSET_OF(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)
-        
-        return
+    def typeSET_OF(self, jsonobj, attrib=False):
+        return self.typeSEQUENCE_OF(jsonobj, attrib)
     
-    def typeCHOICE(self, jsonobj):
-        typestring = self.validTypenamePair(jsonobj)
-        
-        return
+    def typeCHOICE(self, jsonobj, attrib=False):
+        typestring = self.validTypenamePair(jsonobj, attrib)
+        error = self.ContextLogicError("CHOICE attributes specification required in format: 'contents':[obj1, obj2, ...]", jsonobj)
+        if not jsonobj.getPair("contents"):
+            raise error
+        if not jsonobj.getPair("contents").holdsArray():
+            raise error
+        if not jsonobj.getPairValue("contents").holdsOnlyObjects():
+            raise error
+        jsonattrobjs = jsonobj.getPairValue("contents").getElements()
+        unionattribs = []
+        attrnames = []
+        for attribobj in jsonattrobjs:
+            attrib = self.validTypeAttribute(attribobj)
+            if attrib.name in attrnames:
+                raise self.ContextLogicError("Duplication of CHOICE attribute identifiers: {}".format(attrib.name), jsonobj)
+            unionattribs.append(attrib)
+            attrnames.append(attrib.name)
+            
+        uniont = CUnionType(unionattribs)
+        typedef = CTypedef(uniont, typestring)
+        return typedef
     
-    def validTypeAttribute(self, jsonobj, spectype=None):
-        typename = self.validTypenamePair(jsonobj)
-        attribname = self.validIdentifier(jsonobj, attrib=True)
-        if spectype:
-            typename = spectype
+    '''
+    This methods helps with validating if JSONPairs value and structure are as wanted
+    
+    '''
+    def validTypeAttribute(self, jsonobj, spectype=None, subtype=False):
+        '''
+        Validates attribute of structured type, if correct returns it,
+        otherwise raise an exception
+        :param jsonobj: JSONObject with attribute description
+        :param spectype: specified type (string) optional, used if attribute type have to be forced
+        :param subtype: 'true' if attribute is subtype of SEQUENCE OF or SET OF
+        '''
+        typename = spectype
+        attribname = "default"
+        if spectype == None:
+            if not subtype:
+                attribname = self.validIdentifier(jsonobj, attrib=True)
+            typename = self.validTypenamePair(jsonobj, attrib=True)
             
         attrtypedef = None
         if typename == "BOOLEAN":
-            attrtypedef = self.typeBOOLEAN(jsonobj)
+            attrtypedef = self.typeBOOLEAN(jsonobj, attrib=True)
         elif typename == "INTEGER":
-            attrtypedef = self.typeINTEGER(jsonobj)
+            attrtypedef = self.typeINTEGER(jsonobj, attrib=True)
         elif typename == "REAL":
-            attrtypedef = self.typeREAL(jsonobj)
+            attrtypedef = self.typeREAL(jsonobj, attrib=True)
         elif typename == "BIT STRING":
-            attrtypedef = self.typeBIT_STRING(jsonobj)
+            attrtypedef = self.typeBIT_STRING(jsonobj, attrib=True)
         elif typename == "OCTET STRING":
-            attrtypedef = self.typeOCTET_STRING(jsonobj)
+            attrtypedef = self.typeOCTET_STRING(jsonobj, attrib=True)
         elif typename == "CHARACTER STRING":
-            attrtypedef = self.typeCHARACTER_STRING(jsonobj)
+            attrtypedef = self.typeCHARACTER_STRING(jsonobj, attrib=True)
         elif typename == "ENUMERATED":
-            attrtypedef = self.typeENUMERATED(jsonobj)
+            attrtypedef = self.typeENUMERATED(jsonobj, attrib=True)
         elif typename == "SEQUENCE":
-            attrtypedef = self.typeSEQUENCE(jsonobj)
+            attrtypedef = self.typeSEQUENCE(jsonobj, attrib=True)
         elif typename == "SEQUENCE OF":
-            attrtypedef = self.typeSEQUENCE_OF(jsonobj)
+            attrtypedef = self.typeSEQUENCE_OF(jsonobj, attrib=True)
         elif typename == "SET":
-            attrtypedef = self.typeSET(jsonobj)
+            attrtypedef = self.typeSET(jsonobj, attrib=True)
         elif typename == "SET OF":
-            attrtypedef = self.typeSET_OF(jsonobj)
+            attrtypedef = self.typeSET_OF(jsonobj, attrib=True)
         elif typename == "CHOICE":
-            attrtypedef = self.typeCHOICE(jsonobj)
+            attrtypedef = self.typeCHOICE(jsonobj, attrib=True)
         else: #user defined type
             self.checkifTypeDefined(typename, jsonobj)
             return CVarType(typename, attribname)
         attributetype = attrtypedef.covered
-        return CVarType(attributetype, attribname)
+        return CVarType(attributetype, attribname, attrtypedef.constraints)
+    
+    def validSubtypePair(self, jsonobj):
+        '''
+        Validates subtype pair structure and returns it value if correct,
+        otherwise raises an exception
+        :param jsonobj:
+        '''
+        subtypepair = jsonobj.getPair("subtype")
+        if subtypepair == None:
+            raise self.ContextLogicError("'subtype' specification is required here", jsonobj)
+        valid = subtypepair.holdsObject()
+        if valid:
+            return subtypepair.value
+        raise self.ContextLogicError("'subtype' shouldb have JSON object value", jsonobj)
         
-    def validTypenamePair(self, jsonobj):
-        attrib = False
-        typepair = jsonobj.getPair("typeName")
+    def validTypenamePair(self, jsonobj, attrib=False, subtype=False):
+        '''
+        Validates typename pair, checks if it holds correct string value
+        typename pair can be tagged: "typeName", "type" or "subtype"
+        '''
+        typetag = "typeName"
+        if attrib:
+            typetag = "type"
+        if subtype:
+            typetag = "subtype"
+        typepair = jsonobj.getPair(typetag)
+        
         if typepair == None:
-            typepair = jsonobj.getPair("type")
-            attrib = True
-        if typepair == None:
-            raise self.ContextLogicError("'typeName' or 'type' value should be defined", jsonobj)
+            raise self.ContextLogicError("'{}' specification is required here".format(typetag), jsonobj)
         valid = typepair.holdsString()
         if valid:
             typestring = typepair.value.string
-            
+            # if attribute then allow for asn1 built-in types
+            if (attrib or subtype) and typestring in asn1types:
+                return typestring
             # check if typename is valid in C
             if not validCTypename(typestring):
                 raise self.ContextLogicError("Type name: '{}' is not valid name for a type".format(typestring), jsonobj)
             return typestring
         else:
-            raise self.ContextLogicError("Expected valid 'typeName'/'type' value: <string>", jsonobj)
+            raise self.ContextLogicError("Expected valid '{}' value: <string>".format(typetag), jsonobj)
 
     def validEncodingPair(self, jsonobj):
+        '''
+        Validates encoding pair, checks if it holds one of allowed values
+        '''
         error = self.ContextLogicError("Expected valid 'encoding' property: \"pos-int\", \"twos-complement\"," + \
                             " \"ASCII\",\"IEEE754-1985-32\", \"IEEE754-1985-64\"", jsonobj)
         if jsonobj.getPair("encoding").holdsString():
@@ -285,15 +414,25 @@ class Interpreter():
             raise error
         
     def validConstraintPair(self, jsonobj, constrType):
+        '''
+        Validates constraint pairs: "min", "max", "size" properties
+        :param constrType:
+        '''
+        error = self.ContextLogicError("Expected valid '{}' value: <integer or real>".format(constrType), jsonobj)
         if constrType not in ["min", "max", "size"]:
             return None
+        if not jsonobj.getPair(constrType):
+            raise error
         if jsonobj.getPair(constrType).holdsNumber():
             val = jsonobj.getPairValue(constrType).value
             return val
         else:
-            raise self.ContextLogicError("Expected valid '{}' value: <integer or real>".format(constrType), jsonobj)
-    
+            raise error
+        
     def validIdentifier(self, jsonobj, attrib=False):
+        '''
+        Validates "objectName" pair, checks if contains allowed value
+        '''
         namepair = jsonobj.getPair("objectName")
         if attrib:
             namepair = jsonobj.getPair("attribute")
@@ -310,24 +449,42 @@ class Interpreter():
             raise self.ContextLogicError("Identifier should be specified in 'objectName'/'attribute'", jsonobj)
     
     def checkifTypeDefined(self, typename, jsonobj):
+        '''
+        Checks if type is already on declarations list
+        :param typename: type to check
+        '''
         for decl in self.declarations:
             if decl.typename == typename:
                 return decl
         raise self.ContextLogicError("Type '{}' is not defined".format(typename), jsonobj)
     
-    def addTypeMetadata(self, typestring, name, value):
-        if not typestring in self.typesMetadata:
-            self.typesMetadata[typestring] = { name:value }
-            return
-        self.typesMetadata[typestring][name] = value
+    def validModuleContentsPair(self, jsonobj):
+        '''
+        Validates structure of "moduleContents" pair
+        '''
+        error = self.ContextLogicError("Wrong format or missing module contents: " +\
+                                       "expected format: 'moduleContents':[obj1, obj2, ...]", jsonobj)
+        contPair = jsonobj.getPair("moduleContents")
+        if not contPair:
+            raise error
+        if not contPair.holdsArray():
+            raise error
+        if not contPair.value.holdsOnlyObjects():
+            raise error
+        return contPair.value.getElements()
     
     def ContextLogicError(self, message, jsonobj):
+        '''
+        Creates exception instance in context of file, and currently analysed json object
+        :param message: message to pass
+        :param jsonobj: context JSONObject
+        '''
         return LogicError(self.currentFile, message,
-                             line=self.enumerated[jsonobj])
+                             line=self.jsonFilelines[jsonobj])
         
         
 """testing----------------------------------------------------"""
-interpr = Interpreter()
+interpr = ContentsResolver()
 lexer = JSONLexer()
 parser = JSONParser()
 name = "test.json"
@@ -338,7 +495,7 @@ try:
     parsed = parser.parse(res, name)
     
     parsedDict = { name:parsed }
-    result = interpr.interpret([name], parsedDict, parser.enumerated)
+    result = interpr.resolve([name], parsedDict, { name:parser.enumerated })
     
     print("declatarions------------------------")
     for item in interpr.declarations:
@@ -349,9 +506,6 @@ try:
     for item in interpr.defines:
         print(str(item))
         print()
-    
-    print("metadata------------------------")   
-    print(interpr.typesMetadata)
 
     
 except IOError as ioErr:

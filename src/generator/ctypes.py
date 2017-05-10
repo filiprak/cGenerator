@@ -33,11 +33,12 @@ class CVarType():
     Represents declaration of C variable
     Can be simple or structured type 
     '''
-    def __init__(self, variabletype, name):
+    def __init__(self, variabletype, name, constraints=dict()):
         self.variabletype = variabletype
         if not isinstance(variabletype, str):
             self.variabletype.semicol = False
         self.name = name
+        self.constraints = constraints
     
     def __str__(self):
         return "{} {};".format(str(self.variabletype),
@@ -50,7 +51,7 @@ class CTypedef():
     Representation of C typedef code snippet
     Can be used for structured and simple types
     '''
-    def __init__(self, covered, typename):
+    def __init__(self, covered, typename, constraints=dict()):
         '''
         :param covered: covered type (structural(object) or simple - string)
         :param typename: name of new type
@@ -59,7 +60,8 @@ class CTypedef():
         if not isinstance(covered, str):
             self.covered.semicol = False
         self.typename = typename
-
+        self.constraints = constraints
+        
     def __str__(self):
         return "typedef {} {};".format(str(self.covered), str(self.typename))
 
