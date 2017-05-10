@@ -6,7 +6,7 @@ text form by calling str(object). Text form is gramatically valid
 for C language (in C99 standard).
 @author: raqu
 '''
-from errors import CSerializeError
+
 
 # helper func for indenting multiline string
 def indent(string, nrtabs=1):
@@ -43,28 +43,7 @@ class CVarType():
         return "{} {};".format(str(self.variabletype),
                                str(self.name))
 
-class CVarAssign():
-    '''
-    Represents variable assign C code snippet.
-    Can only be simple type, not structured.
-    '''
-    def __init__(self, vartype, value, attrib=False):
-        '''
-        :param vartype: CVarType variable type
-        :param value: represents value of variable
-        :param attrib: should be set 'True' if variable is part of structured type
-        '''
-        self.vartype = vartype
-        self.value = value
-        self.attrib = attrib
-    
-    def __str__(self):
-        if self.attrib:
-            return ".{} = {}".format(str(self.vartype.name),
-                                     str(self.value))
-        return "{} {} = {};".format(str(self.vartype.variabletype),
-                                    str(self.vartype.name),
-                                    str(self.value))
+
     
 class CTypedef():
     '''
@@ -88,13 +67,13 @@ class CEnumType():
     '''
     Represents enum declaration C code snippet
     '''
-    def __init__(self, name, values, semicol=True):
+    def __init__(self, values, enumname=None,  semicol=True):
         '''
-        :param name: enum name
+        :param enumname: enum <enumname> { ...
         :param values: list of string values that will be enumerated
         :param semicol: flag, if ";" should be put at the end then 'True'
         '''
-        self.name = name
+        self.enumname = enumname
         self.values = values
         self.semicol = semicol
 
@@ -105,45 +84,23 @@ class CEnumType():
             strValues += ", {}".format(v)
         strValues += " }"
         
-        string = "enum {} {}".format(str(self.name),
-                                   str(strValues))
+        string = "enum "
+        if self.enumname != None:
+            string += self.enumname + " "
+        string += str(strValues)
         if self.semicol:
             string += ";"
         return string
 
 
-class EnumAssign():
-    '''
-    Represents enum variable assignment C code snippet
-    '''
-    def __init__(self, enumtype, name, value, semicol=True, attrib=False):
-        '''
-        :param enumtype: CEnumType object
-        :param name: variable identifier
-        :param value: assigned value (string format)
-        '''
-        self.enumtype = enumtype
-        self.name = name
-        self.value = value
-        self.attrib = attrib
-        self.semicol = semicol
-    
-    def __str__(self):
-        string = "enum " + str(self.enumtype.name) + " "
-        if self.attrib:
-            string = "."
-        string += "{} = {}".format(str(self.name),
-                                        str(self.value))
-        if self.semicol:
-            string += ";"
-        return string
+
 
 
 class CStructType():
     '''
     Represents struct type declaration C code snippet
     '''
-    def __init__(self, structname, attributes=[], semicol=True):
+    def __init__(self, attributes=[], structname=None, semicol=True):
         '''
         :param structname: name of struct type 'struct <structname> {...'
         :param attributes: list of struct attributes (C*Type objects)
@@ -158,65 +115,10 @@ class CStructType():
             attr = indent(str(a))
             strAttributes += "\n{}".format(attr)
         strAttributes += "\n}"
-        string = "struct {} {}".format(str(self.structname),
-                                      str(strAttributes))
-        if self.semicol:
-            string += ";"
-        return string
-
-
-class CStructAssign():
-    '''
-    Represents struct variable assign C code snippet
-    '''
-    def __init__(self, structtype, name, values, typedef=None, semicol=True, attrib=False):
-        '''
-        :param structtype: CStructType object
-        :param name: variable identifier
-        :param values: dict of attributes values
-        :param typedef: type name that covers struct type (string format)
-        '''
-        self.structtype = structtype
-        self.name = name
-        self.typedef = typedef
-        self.semicol = semicol
-        self.values = values
-        self.attrib = attrib
-        self.assigned = None
-
-    def __str__(self):
-        strAttributes = "{"
-        #last element indicator
-        last = self.structtype.attributes[len(self.structtype.attributes) - 1]
-        for a in self.structtype.attributes:
-            if not isinstance(a, (CVarType, CArrayType)):
-                raise CSerializeError("Illegal struct member in: " + self.uniontype.unionname)
-            if a.name not in self.values:
-                raise CSerializeError("Struct attribute left unassigned: " + self.uniontype.unionname + ": " + a.name)
-            if isinstance(a, CVarType):
-                if isinstance(a.variabletype, CStructType):
-                    self.assigned = CStructAssign(a.variabletype, a.name, self.values[a.name], semicol=False, attrib=True)
-                elif isinstance(a.variabletype, CEnumType):
-                    self.assigned = CVarAssign(a.variabletype, self.values[a.name], attrib=True)
-                elif isinstance(a.variabletype, CUnionType):
-                    self.assigned = CUnionAssign(a.variabletype, a.name, self.values[a.name], semicol=False, attrib=True)
-                else:
-                    self.assigned = CVarAssign(a, self.values[a.name], attrib=True)
-            elif isinstance(a, CArrayType):
-                self.assigned = CArrayAssign(a, self.values[a.name], semicol=False, attrib=True)
-
-            attr = indent(str(self.assigned))
-            strAttributes += "\n{}".format(attr)
-            if a != last:
-                strAttributes += ","
-        strAttributes += "\n}"
-        
-        string = "struct " + str(self.structtype.structname) + " "
-        if self.typedef != None:
-            string = self.typedef + " "
-        if self.attrib:
-            string = "."
-        string += "{} = {}".format(str(self.name), str(strAttributes))
+        string = "struct "
+        if self.structname != None:
+            string += self.structname + " "
+        string += str(strAttributes)
         if self.semicol:
             string += ";"
         return string
@@ -226,7 +128,7 @@ class CUnionType():
     '''
     Represents union type declaration C code snippet
     '''
-    def __init__(self, unionname, attributes=[], semicol=True):
+    def __init__(self, attributes=[], unionname=None, semicol=True):
         '''
         :param unionname: name of union type 'union <unionname> {...'
         :param attributes: list of union attributes (C*Type objects)
@@ -241,64 +143,10 @@ class CUnionType():
             attr = indent(str(a))
             strAttributes += "\n{}".format(attr)
         strAttributes += "\n}"
-        string = "union {} {}".format(str(self.unionname),
-                                      str(strAttributes))
-        if self.semicol:
-            string += ";"
-        return string
-
-
-class CUnionAssign():
-    '''
-    Represents union variable assign C code snippet
-    '''
-    def __init__(self, uniontype, name, value, typedef=None, semicol=True, attrib=False):
-        '''
-        :param uniontype: CUnionType object
-        :param name: variable identifier
-        :param value: dict of one value to assign
-        :param typedef: type name that covers union type (string format)
-        '''
-        self.uniontype = uniontype
-        self.name = name
-        self.value = value
-        self.typedef = typedef
-        self.semicol = semicol
-        self.attrib = attrib
-        self.assigned = None
-
-    def __str__(self):
-        strAttributes = "{"
-        for a in self.uniontype.attributes:
-            if not isinstance(a, (CVarType, CArrayType)):
-                raise CSerializeError("Illegal union member in: " + self.uniontype.unionname)
-            if a.name in self.value.keys():
-                if isinstance(a, CVarType):
-                    if isinstance(a.variabletype, CStructType):
-                        self.assigned = CStructAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
-                    elif isinstance(a.variabletype, CEnumType):
-                        self.assigned = CVarAssign(a.variabletype, self.value[a.name], attrib=True)
-                    elif isinstance(a.variabletype, CUnionType):
-                        self.assigned = CUnionAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
-                    else:
-                        self.assigned = CVarAssign(a, self.value[a.name], attrib=True)
-                elif isinstance(a, CArrayType):
-                    self.assigned = CArrayAssign(a, self.value[a.name], semicol=False, attrib=True)
-                break
-        if self.assigned == None:
-            raise CSerializeError("Illegal union assignment value: " + self.uniontype.unionname)
-            
-        strAttributes += "\n{}\n".format(indent(str(self.assigned)))
-        strAttributes += "}"
-
-        string = "union " + self.uniontype.unionname + " "
-        if self.typedef != None:
-            string = self.typedef + " "
-        if self.attrib:
-            string = "."
-        
-        string += "{} = {}".format(str(self.name),
-                                      str(strAttributes))
+        string = "union "
+        if self.unionname != None:
+            string += self.unionname + " "
+        string += str(strAttributes)
         if self.semicol:
             string += ";"
         return string
@@ -315,46 +163,13 @@ class CArrayType():
         :param size: array size
         '''
         self.valtype = valtype
+        if not isinstance(valtype, str):
+            valtype.semicol = False
         self.name = name
         self.size = size
     
     def __str__(self):
         return "{} {}[{}];".format(str(self.valtype), str(self.name), str(self.size))
-
-
-class CArrayAssign():
-    '''
-    Represents array initialization C code snippet
-    '''
-    def __init__(self, arrtype, values, attrib=False, semicol=False):
-        '''
-        :param arrtype: CArrayType object
-        :param values: list of elements
-        '''
-        self.arrtype = arrtype
-        self.values = values
-        self.attrib = attrib
-        self.semicol = semicol
-    
-    def __str__(self):
-        strValues = "{"
-        strValues += " {}".format(str(self.values[0]))
-        for v in self.values[1:]:
-            strValues += ", {}".format(str(v))
-        strValues +=" }"
-        
-        if self.attrib:
-            return ".{} = {}".format(str(self.arrtype.name),
-                                     str(strValues))
-        string = "{} {}[{}] = {};".format(str(self.arrtype.valtype),
-                                        str(self.arrtype.name),
-                                        str(self.arrtype.size),
-                                        str(strValues))
-        if self.semicol:
-            string += ";"
-        return string
-
-
 
 
 
