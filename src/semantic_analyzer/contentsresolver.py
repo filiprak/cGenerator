@@ -7,11 +7,9 @@ from json description and translate them into C types declaration and definition
 import re
 from generator.ctypes import CVarType, CTypedef, CPreprocConstDefine, CArrayType,\
     CStructType, CEnumType, CUnionType
-from jsonparser.jsonparser import JSONParser
-from jsonparser.lexer import JSONLexer
-from errors import LexerError, ParserError, LogicError, CSerializeError
 from semantic_analyzer.constants import reservedCKeywords, asn1types
 from semantic_analyzer.defresolver import DefinitionResolver
+from errors import LogicError
 
 
 # helper functions for validation c indentifiers and typenames
@@ -97,7 +95,7 @@ class ContentsResolver():
                 else:
                     raise self.ContextLogicError("Required 'typeName' or 'objectType' value here", jsonobj)
             
-        return self.declarations, self.definitions, self.defines
+        return self.defines, self.declarations, self.definitions
     
     '''
     This methods resolves single jsonobj user-defined type declarations
@@ -481,44 +479,3 @@ class ContentsResolver():
         '''
         return LogicError(self.currentFile, message,
                              line=self.jsonFilelines[jsonobj])
-        
-        
-"""testing----------------------------------------------------"""
-interpr = ContentsResolver()
-lexer = JSONLexer()
-parser = JSONParser()
-name = "test.json"
-
-try:
-    lexer.loadFile(name)
-    res = lexer.analyze()
-    parsed = parser.parse(res, name)
-    
-    parsedDict = { name:parsed }
-    result = interpr.resolve([name], parsedDict, { name:parser.enumerated })
-    
-    print("declatarions------------------------")
-    for item in interpr.declarations:
-        print(str(item))
-        print()
-    
-    print("defines------------------------")   
-    for item in interpr.defines:
-        print(str(item))
-        print()
-
-    
-except IOError as ioErr:
-    print("I/O error({0}): {1}: {2}".format(ioErr.errno, ioErr.strerror, ioErr.args[2]))
-except LexerError as leErr:
-    print(leErr.message)
-except ParserError as paErr:
-    print(paErr.message)
-except LogicError as loErr:
-    print(loErr.message)
-except CSerializeError as cErr:
-    print(cErr.message)
-    
-    
-    
-        

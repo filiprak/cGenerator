@@ -1,6 +1,6 @@
 '''
 Created on 9.05.2017
-Constants module
+Constants module for semantic analyzer
 @author: raqu
 '''
 

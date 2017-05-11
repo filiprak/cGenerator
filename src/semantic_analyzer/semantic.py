@@ -5,35 +5,44 @@ contains functions of semantic actions over parsed file
 @author: raqu
 '''
 from errors import LogicError
+from semantic_analyzer.contentsresolver import ContentsResolver
 
-def isJSONObject(obj):
-    return 
 
-class SemanticAnalyzer():
-    def __init__(self):
-        self.parsedDict = None
-        self.processOrder = None
-        
-    def analyze(self, parsedDict=dict()):
+class SemanticAnalyzer():    
+    def analyze(self, parsedDict, jsonFilelines):
+        '''
+        Main method, analyzes parsed files, returns declarations, definitions and defines if 
+        :param parsedDict: dict: key: filename, value: parsed jsonfile
+        :param jsonFilelines: dict: key: file name, value: dict: (key: jsonobj, value: its line number in file)
+        '''
         if len(parsedDict.keys()) == 0:
             return None
-        self.parsedDict = parsedDict
-        self.processOrder = self.dependencySort(parsedDict)
+        processOrder = self.dependencySort(parsedDict, jsonFilelines)
+        
+        contentResolver = ContentsResolver()
+        return contentResolver.resolve(processOrder, parsedDict, jsonFilelines)
     
-    def dependencySort(self, parsedDict):        
+    
+    def dependencySort(self, parsedDict, jsonFilelines):        
+        '''
+        Method for validating module dependencies and determine files processing order
+        :param parsedDict: dict: key: filename, value: parsed jsonfile
+        :param jsonFilelines: dict: key: file name, value: dict: (key: jsonobj, value: its line number in file)
+        '''
         for filename in parsedDict.keys():
             parsed = parsedDict[filename]
+            line = jsonFilelines[filename][parsed]
             modulenamePair = parsed.getPair("moduleName")
             if not modulenamePair:
-                raise LogicError(filename, "Module name tag required: \"moduleName\":<name>")
+                raise LogicError(filename, "Module name tag required: \"moduleName\":<name>", line)
             if not modulenamePair.holdsString():
-                raise LogicError(filename, "Incorrect value, should be string value\"moduleName\":<string>")
+                raise LogicError(filename, "Incorrect value, should be string value\"moduleName\":<string>", line)
             importsPair = parsed.getPair("imports")
             if importsPair:
                 if not importsPair.holdsArray():
-                    raise LogicError(filename, "Incorrect imports value\"imports\":[ names ]")
+                    raise LogicError(filename, "Incorrect imports value\"imports\":[ names ]", line)
                 if not importsPair.value.holdsOnlyStrings():
-                    raise LogicError(filename, "Incorrect imports value\"imports\":[ \"module1\", \"module2\", ...  ]")
+                    raise LogicError(filename, "Incorrect imports value\"imports\":[ \"module1\", \"module2\", ...  ]", line)
 
         modulesDict = dict()
         for filename in parsedDict.keys():
@@ -41,7 +50,7 @@ class SemanticAnalyzer():
             modulenamePair = parsed.getPair("moduleName")
             importsPair = parsed.getPair("imports")
             if modulenamePair in modulesDict.keys():
-                raise LogicError(filename, "Duplicated module names.")
+                raise LogicError(filename, "Duplicated module names.", line)
             modules = []
             if importsPair:
                 for imported in importsPair.value.getElements():
@@ -51,6 +60,7 @@ class SemanticAnalyzer():
         sortedModules = []
         modules = modulesDict.keys()
         print(modulesDict)
+        print()
         while True:
             before = len(sortedModules)
             for module in modules: 
@@ -58,14 +68,14 @@ class SemanticAnalyzer():
                     sortedModules.append(module)
                     modules.remove(module)
             if before == len(sortedModules) and len(modules) != 0:
-                raise LogicError("dependency check", "Cannot resolve module dependencies in {}".format(modules))
+                raise LogicError("dependency check", "Cannot resolve module dependencies in {}".format(modules), line)
             if before == len(sortedModules) and len(modules) == 0:
                 break
         
         filenameSorted = []
         for module in sortedModules:
-            for filename in self.parsedDict.keys():
-                if module == self.parsedDict[filename].getPair("moduleName").value.string:
+            for filename in parsedDict.keys():
+                if module == parsedDict[filename].getPair("moduleName").value.string:
                     filenameSorted.append(filename)
         
         return filenameSorted
