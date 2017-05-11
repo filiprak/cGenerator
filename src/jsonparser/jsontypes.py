@@ -69,7 +69,12 @@ class JSONPair(object):
         self.name = name
         self.value = value
     
-    def holdsNumber(self):
+    def holdsNumber(self, numtype=None):
+        if self.value.__class__ == JSONNumber().__class__ and numtype:
+            if numtype == "int":
+                return self.value.isInteger()
+            if numtype == "float":
+                return self.value.isFloat()
         return self.value.__class__ == JSONNumber().__class__
     
     def holdsString(self):
@@ -113,8 +118,23 @@ class JSONArray(object):
     def getElements(self):
         return self.elements.values()
     
-    def holdsNumber(self, index):
+    def holdsNumber(self, index, numtype=None):
+        if self.getElement(index).__class__ == JSONNumber().__class__ and numtype:
+            if numtype == "int":
+                return self.getElement(index).isInteger()
+            if numtype == "float":
+                return self.getElement(index).isFloat()
         return self.getElement(index).__class__ == JSONNumber().__class__
+    
+    def holdsOnlyNumbers(self, numtype=None):
+        for element in self.elements.values():
+            if element.__class__ != JSONNumber().__class__:
+                return False
+            if numtype == "int" and not element.isInteger():
+                return False
+            if numtype == "float" and not element.isFloat():
+                return False
+        return True
     
     def holdsString(self, index):
         return self.getElement(index).__class__ == JSONString().__class__
