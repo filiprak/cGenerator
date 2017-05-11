@@ -169,17 +169,25 @@ class JSONNumber(object):
     '''
     Represents json number, can be float, integer, positive or negative number
     value is converted from given string number representation to float value
-    value is interpreted as integer when it fraction part equals 0
+    value is interpreted as integer when it doesn't contain '.' or 'e'/'E' chars in string
     '''
     def __init__(self, number="0"):
         self.number = number
-        self.value = float(number)
+        self.numtype = None
+        self.value = self.calcNumber()
+    
+    def calcNumber(self):
+        if '.' in self.number or 'e' in self.number or 'E' in self.number:
+            self.numtype = "float"
+            return float(self.number)
+        self.numtype = "int"
+        return int(self.number)
     
     def isInteger(self):
-        return float(self.number) == int(float(self.number))
+        return self.numtype == "int"
     
     def isFloat(self):
-        return not self.isInteger()
+        return self.numtype == "float"
     
     def getValue(self):
         return self.value
