@@ -42,6 +42,29 @@ class DefinitionResolver():
         self.definitions.append(definition)
         return definition
     
+    '''
+    This methods helps with validating if JSONPairs value and structure are as wanted
+    
+    '''
+    def validPair(self, name, expvalue="string"):
+        error = self.ContextLogicError("Missing or incorrect value '{}', expected <{}> value".format(name, expvalue))
+        pair = self.currObject.getPair(name)
+        if not pair:
+            raise error
+        if expvalue == "string" and pair.holdsString():
+            return pair.value.string
+        elif expvalue == "int" and pair.holdsNumber(numtype="int"):
+            return pair.value.value
+        elif expvalue == "float" and pair.holdsNumber(numtype="float"):
+            return pair.value.value
+        elif expvalue == "object" and pair.holdsObject():
+            return pair.value
+        elif expvalue == "array" and pair.holdArray():
+            return pair.value.getElements()
+        elif expvalue == "literal" and pair.holdsLiteral():
+            return pair.value.literal
+        raise error
+        
     
     def ContextLogicError(self, message):
         return LogicError(self.currentFile, message, self.jsonFilelines[self.currObject])
