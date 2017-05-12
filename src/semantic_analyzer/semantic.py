@@ -5,7 +5,7 @@ contains functions of semantic actions over parsed file
 @author: raqu
 '''
 from errors import LogicError
-from semantic_analyzer.contentsresolver import ContentsResolver
+from contentsresolver import ContentsResolver
 
 
 class SemanticAnalyzer():    

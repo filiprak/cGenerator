@@ -33,14 +33,14 @@ class Generator():
         if len(macr) > 0:
             contents = "\n\n"
             for macrodef in macr:
-                contents += str(macrodef)
+                contents += str(macrodef) + "\n"
         
         if len(decl) > 0:
             contents += "\n\n"
             for declaration in decl:
-                contents += str(declaration) + "\n"
+                contents += str(declaration) + "\n\n"
         
-        contents += "\n\n"
+        contents += "\n"
         contents += self.comment("Main function")
         contents += "\n"
         

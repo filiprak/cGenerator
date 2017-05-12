@@ -4,28 +4,12 @@ Contents resolver module aims to read definitions and declarations
 from json description and translate them into C types declaration and definition
 @author: raqu
 '''
-import re
 from generator.ctypes import CVarType, CTypedef, CPreprocConstDefine, CArrayType,\
     CStructType, CEnumType, CUnionType
-from semantic_analyzer.constants import reservedCKeywords, asn1types
-from semantic_analyzer.defresolver import DefinitionResolver
+from semantic_analyzer.common import asn1types,\
+    validCTypename, validCidentifier
+from defresolver import DefinitionResolver
 from errors import LogicError
-
-
-# helper functions for validation c indentifiers and typenames
-def validCTypename(typename):
-    if typename in reservedCKeywords:
-        return False
-    if ' ' in typename or '\n' in typename or '\r' in typename or '\t' in typename:
-        return False
-    return re.match("^[_a-zA-Z][_a-zA-Z0-9]*$" , typename) != None
-    
-def validCidentifier(identifier):
-    if identifier in reservedCKeywords:
-        return False
-    if ' ' in identifier or '\n' in identifier or '\r' in identifier or '\t' in identifier:
-        return False
-    return re.match("^[_a-zA-Z][_a-zA-Z0-9]*$" , identifier) != None
 
 
 class ContentsResolver():
@@ -106,18 +90,20 @@ class ContentsResolver():
                                 ASN.1 types
     '''
     def typeBOOLEAN(self, jsonobj, attrib=False):
-        result = self.typeINTEGER(jsonobj, attrib)
+        typedef = self.typeINTEGER(jsonobj, attrib)
         optional = dict()
         
         if jsonobj.getPair("true-value"):
             if jsonobj.getPair("true-value").holdsString():
                 optional[1] = jsonobj.getPairValue("true-value").string
+                typedef.constraints["true-value"] = optional[1]
             else:
                 raise self.ContextLogicError("Expected valid 'true-value': <string>", jsonobj)
             
         if jsonobj.getPair("false-value"):
             if jsonobj.getPair("false-value").holdsString():
                 optional[0] = jsonobj.getPairValue("false-value").string
+                typedef.constraints["false-value"] = optional[0]
             else:
                 raise self.ContextLogicError("Expected valid 'false-value': <string>", jsonobj)
             
@@ -126,7 +112,9 @@ class ContentsResolver():
             if not validCTypename(optional[boolvalue]):
                 raise self.ContextLogicError("Type name: '{}' is not valid in C".format(optional[boolvalue]), jsonobj)
             self.defines.append(CPreprocConstDefine(optional[boolvalue], boolvalue))
-        return result
+            
+        typedef.constraints["boolean"] = True
+        return typedef
     
     def typeINTEGER(self, jsonobj, attrib=False):
         typestring = self.validTypenamePair(jsonobj, attrib)

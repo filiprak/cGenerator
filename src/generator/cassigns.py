@@ -23,6 +23,7 @@ class CVarAssign():
         :param attrib: should be set 'True' if variable is part of structured type
         '''
         self.vartype = vartype
+        self.name = vartype.name
         self.value = value
         self.attrib = attrib
     
@@ -191,6 +192,7 @@ class CArrayAssign():
         :param values: list of elements
         '''
         self.arrtype = arrtype
+        self.name = arrtype.name
         self.values = values
         self.attrib = attrib
         self.semicol = semicol
