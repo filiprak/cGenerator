@@ -203,7 +203,7 @@ class ContentsResolver():
             elif encoding == "IEEE754-1985-64":
                 ctype = "double"
             elif encoding == "twos-complement":
-                ctype = "signed long"
+                ctype = "double"
             else:
                 raise self.ContextLogicError("Illegal encoding property for REAL type", jsonobj)
             

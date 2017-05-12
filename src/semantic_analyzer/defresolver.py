@@ -84,20 +84,26 @@ class DefinitionResolver():
                 return CVarAssign(objecttype, 1, attrib)
             return CVarAssign(objecttype, 0, attrib)
             
-        # ordinary int value       
-        elif simpltype in ["int", "unsigned"]:
-            value = self.validPair(jsonobj, "value", expvalue=["string", "int"])
+        # number value
+        inttypes = ["int", "unsigned"]
+        floattypes = ["double", "float"]   
+        if simpltype in inttypes or simpltype in floattypes:
+            value = 0
+            if simpltype in inttypes:
+                value = self.validPair(jsonobj, "value", expvalue=["string", "int"])
+            if simpltype in floattypes:
+                value = self.validPair(jsonobj, "value", expvalue=["string", "float"])  
             if isinstance(value, str):
                 defin = self.checkIfobjectDefined(value)
                 if not isinstance(defin, CVarAssign):
                     raise self.ContextLogicError("Incompatibile type for assignment in 'value'", jsonobj)
-                if defin.vartype.variabletype == objecttype:
+                if defin.vartype.variabletype == simpltype:
                     return CVarAssign(objecttype, value, attrib)
                 if defin.vartype.variabletype == simpltype and defin.vartype.constraints == constr:
                     return CVarAssign(objecttype, value, attrib)
             self.checkNumberConstr(jsonobj, ident, value, constr)
             return CVarAssign(objecttype, value, attrib)
-        
+
     
     def assignAttribute(self, jsonobj, cvartype):
         return
@@ -112,7 +118,7 @@ class DefinitionResolver():
                 raise self.ContextLogicError("Value of "+\
                     "'{}' has constraint: min={}".format(ident, str(constraints["min"])), jsonobj)
         if "max" in constraints:
-            if value < constraints["max"]:
+            if value > constraints["max"]:
                 raise self.ContextLogicError("Value of "+\
                     "'{}' has constraint: max={}".format(ident, str(constraints["max"])), jsonobj)
         if "encoding" in constraints:
