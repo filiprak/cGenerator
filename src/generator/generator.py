@@ -18,16 +18,18 @@ class Generator():
     def __init__(self):
         self.filestring = ""
         
-    def generate(self, macr, decl, defi):
+    def generate(self, macr, decl, defi, adddate=True):
         '''
         Converts given C clauses to string C code
         :param macr: list containing CPreprocConstDefine type elements
         :param decl: list containing CTypedef, CVarType type elements
         :param defi: list containing CVarAssign elements
         '''
-        date = datetime.today()
+        
         header = "File generated automatically from ASN.1 JSON description\n"
-        header += "Generation date:  " + date.strftime("%Y-%m-%d %H:%M")
+        if adddate:
+            date = datetime.today()
+            header += "Generation date:  " + date.strftime("%Y-%m-%d %H:%M")
         
         contents = ""
         if len(macr) > 0:
@@ -47,7 +49,7 @@ class Generator():
         maincontents = ""
         if len(defi) > 0:
             for definition in defi:
-                maincontents += str(definition) + "\n"
+                maincontents += str(definition) + "\n\n"
         
         self.filestring += self.comment(header)
         self.filestring += contents + self.mainfunc(maincontents)
@@ -66,9 +68,9 @@ class Generator():
         Generate main function in C style
         :param contents: main function body
         '''
-        mainfunc = "int main(int argc, char *argv[]) {\n"
+        mainfunc = "int main(int argc, char *argv[]) {\n\n"
         mainfunc += indent(contents)
-        mainfunc += indent("\nreturn 0;")
+        mainfunc += indent("\n\nreturn 0;")
         mainfunc += "\n}"
         return mainfunc
     

@@ -22,9 +22,11 @@ class ContentsResolver():
         self.declarations = []
         self.definitions = []
         
-        self.defResolver = DefinitionResolver(self.declarations, self.defines)
+        self.enumerators = []
+        self.defResolver = DefinitionResolver(self.declarations, self.defines, self.enumerators)
         
         self.currentFile = None
+        self.currTypename = None
         self.jsonFilelines = None
         
     
@@ -45,6 +47,7 @@ class ContentsResolver():
             for jsonobj in contentsObjects:
                 if jsonobj.getPair("typeName"):
                     coveredtype = self.validTypenamePair(jsonobj, attrib=True)
+                    self.currTypename = self.validTypenamePair(jsonobj)
                     typedef = None
                     if coveredtype == "BOOLEAN":
                         typedef = self.typeBOOLEAN(jsonobj)
@@ -71,13 +74,15 @@ class ContentsResolver():
                     elif coveredtype == "CHOICE":
                         typedef = self.typeCHOICE(jsonobj)
                     else: #user defined type
-                        raise self.ContextLogicError("User defined type '{}' cannot be overriden", jsonobj)
+                        raise self.ContextLogicError("User defined type '{}' cannot be overriden".format(self.currTypename), jsonobj)
+                    if self.checkifTypeDefined(self.currTypename, jsonobj, exception=False) != None:
+                        raise self.ContextLogicError("Redeclaration of '{}' type".format(self.currTypename), jsonobj)
                     self.declarations.append(typedef)
                 elif jsonobj.getPair("objectName"):
                     defin = self.defResolver.resolve(filename, jsonobj, jsonFilelines)
                     self.definitions.append(defin)
                 else:
-                    raise self.ContextLogicError("Required 'typeName' or 'objectType' value here", jsonobj)
+                    raise self.ContextLogicError("Required 'typeName' or 'objectType' property here", jsonobj)
             
         return self.defines, self.declarations, self.definitions
     
@@ -151,14 +156,16 @@ class ContentsResolver():
             raise self.ContextLogicError("Size constraint must be specified for BIT STRING: 'size':<integer>", jsonobj)
         size = self.validConstraintPair(jsonobj, "size")
         nrints = int(size / 32) + 1
-        bitarrayt = CArrayType("int", "bitarray", nrints)
-        structt = CStructType([bitarrayt])
-        typedef = CTypedef(structt, typestring)
+        bitarrayt = CArrayType("int", "string", nrints)
+        structt = CStructType([bitarrayt], constraints={ "bitstring":True, "size":int(size) })
+        typedef = CTypedef(structt, typestring, constraints={ "bitstring":True, "size":int(size) })
         return typedef
     
     def typeCHARACTER_STRING(self, jsonobj, attrib=False):
-        typedef = self.typeOCTET_STRING(jsonobj)
-        
+        typedef = self.typeOCTET_STRING(jsonobj, attrib)
+        size = typedef.constraints["size"]
+        typedef.constraints = { "charstring":True, "size":size}
+        typedef.covered.constraints = { "charstring":True, "size":size }
         return typedef
     
     def typeOCTET_STRING(self, jsonobj, attrib=False):
@@ -175,9 +182,11 @@ class ContentsResolver():
             else:
                 raise self.ContextLogicError("Illegal encoding property for CHAR/OCTET STRING type", jsonobj)
         
-        chararrayt = CArrayType("char", "bytes", int(size))
-        structt = CStructType([chararrayt])
-        typedef = CTypedef(structt, typestring, metadata)
+        chararrayt = CArrayType("char", "string", int(size))
+        metadata["octetstring"] = True
+        metadata["size"] = size
+        structt = CStructType([chararrayt], constraints=metadata)
+        typedef = CTypedef(structt, typestring, constraints=metadata)
         return typedef
     
     def typeREAL(self, jsonobj, attrib=False):
@@ -213,23 +222,26 @@ class ContentsResolver():
     
     def typeENUMERATED(self, jsonobj, attrib=False):
         typestring = self.validTypenamePair(jsonobj, attrib)
-        error = self.ContextLogicError("ENUMERATED strings specification required in format: 'contents':[str1, str2, ...]", jsonobj)
-        if not jsonobj.getPair("contents"):
+        error = self.ContextLogicError("ENUMERATED strings specification required in format: 'enumerators':[str1, str2, ...]", jsonobj)
+        if not jsonobj.getPair("enumerators"):
             raise error
-        if not jsonobj.getPair("contents").holdsArray():
+        if not jsonobj.getPair("enumerators").holdsArray():
             raise error
-        if not jsonobj.getPairValue("contents").holdsOnlyStrings():
+        if not jsonobj.getPairValue("enumerators").holdsOnlyStrings():
             raise error
-        jsonstrings = jsonobj.getPairValue("contents").getElements()
+        jsonstrings = jsonobj.getPairValue("enumerators").getElements()
         enumvalues = []
         for jstring in jsonstrings:
             if not validCTypename(jstring.string):
                 raise self.ContextLogicError("ENUMERATED string '{}' is illegal value".format(jstring.string), jsonobj)
             if jstring.string in enumvalues:
                 raise self.ContextLogicError("ENUMERATED value '{}' duplication".format(jstring.string), jsonobj)
+            if jstring.string in self.enumerators:
+                raise self.ContextLogicError("ENUMERATED value '{}' redeclaration".format(jstring.string), jsonobj)
             enumvalues.append(jstring.string)
         cenumt = CEnumType(enumvalues)
         typedef = CTypedef(cenumt, typestring)
+        self.enumerators += enumvalues
         return typedef
     
     def typeSEQUENCE(self, jsonobj, attrib=False):
@@ -260,7 +272,10 @@ class ContentsResolver():
         size = self.validConstraintPair(jsonobj, "size")
         subobj = self.validSubtypePair(jsonobj)
         subattrt = self.validTypeAttribute(subobj, subtype=True)
-        arrayt = CArrayType(subattrt.variabletype, "elements", int(size))
+        constr = dict()
+        if subattrt.isSimplType():
+            constr = subattrt.constraints
+        arrayt = CArrayType(subattrt.variabletype, "elements", int(size), constraints=constr)
         structt = CStructType([ arrayt ])
         return CTypedef(structt, typestring)
     
@@ -338,10 +353,12 @@ class ContentsResolver():
         elif typename == "CHOICE":
             attrtypedef = self.typeCHOICE(jsonobj, attrib=True)
         else: #user defined type
-            self.checkifTypeDefined(typename, jsonobj)
-            return CVarType(typename, attribname)
+            if typename == self.currTypename:
+                raise self.ContextLogicError("Recursive types are not supported: '{}'".format(typename), jsonobj)
+            typedef = self.checkifTypeDefined(typename, jsonobj)
+            return CVarType(typedef.covered, attribname, constraints=typedef.constraints)
         attributetype = attrtypedef.covered
-        return CVarType(attributetype, attribname, attrtypedef.constraints)
+        return CVarType(attributetype, attribname, constraints=attrtypedef.constraints)
     
     def validSubtypePair(self, jsonobj):
         '''
@@ -355,7 +372,7 @@ class ContentsResolver():
         valid = subtypepair.holdsObject()
         if valid:
             return subtypepair.value
-        raise self.ContextLogicError("'subtype' shouldb have JSON object value", jsonobj)
+        raise self.ContextLogicError("'subtype' property should hold JSON object value", jsonobj)
         
     def validTypenamePair(self, jsonobj, attrib=False, subtype=False):
         '''
@@ -402,15 +419,18 @@ class ContentsResolver():
     def validConstraintPair(self, jsonobj, constrType):
         '''
         Validates constraint pairs: "min", "max", "size" properties
-        :param constrType:
+        :param constrType: type of constraint to check
         '''
         error = self.ContextLogicError("Expected valid '{}' value: <integer or real>".format(constrType), jsonobj)
         if constrType not in ["min", "max", "size"]:
             return None
-        if not jsonobj.getPair(constrType):
+        pair = jsonobj.getPair(constrType)
+        if not pair:
             raise error
-        if jsonobj.getPair(constrType).holdsNumber():
+        if pair.holdsNumber():
             val = jsonobj.getPairValue(constrType).value
+            if constrType == "size" and ( jsonobj.getPairValue(constrType).isFloat() or val < 1 ):
+                raise self.ContextLogicError("'size' property must have positive <integer> value", jsonobj)
             return val
         else:
             raise error
@@ -434,7 +454,7 @@ class ContentsResolver():
         else:
             raise self.ContextLogicError("Identifier should be specified in 'objectName'/'attribute'", jsonobj)
     
-    def checkifTypeDefined(self, typename, jsonobj):
+    def checkifTypeDefined(self, typename, jsonobj, exception=True):
         '''
         Checks if type is already on declarations list
         :param typename: type to check
@@ -442,7 +462,9 @@ class ContentsResolver():
         for decl in self.declarations:
             if decl.typename == typename:
                 return decl
-        raise self.ContextLogicError("Type '{}' is not defined".format(typename), jsonobj)
+        if exception:
+            raise self.ContextLogicError("Type '{}' is not defined".format(typename), jsonobj)
+        return None
     
     def validModuleContentsPair(self, jsonobj):
         '''

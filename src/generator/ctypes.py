@@ -43,7 +43,10 @@ class CVarType():
     def __str__(self):
         return "{} {};".format(str(self.variabletype),
                                str(self.name))
-
+    
+    def isSimplType(self):
+        return isinstance(self.variabletype, str) and \
+            self.variabletype in [ "int", "unsigned", "double", "float" ]
 
     
 class CTypedef():
@@ -64,12 +67,15 @@ class CTypedef():
         
     def __str__(self):
         return "typedef {} {};".format(str(self.covered), str(self.typename))
+    
+    def coverSimplType(self):
+        return isinstance(self.covered, str) and self.covered in [ "int", "unsigned", "double", "float" ]
 
 class CEnumType():
     '''
     Represents enum declaration C code snippet
     '''
-    def __init__(self, values, enumname=None,  semicol=True):
+    def __init__(self, values, enumname=None,  semicol=True, constraints=dict()):
         '''
         :param enumname: enum <enumname> { ...
         :param values: list of string values that will be enumerated
@@ -78,6 +84,7 @@ class CEnumType():
         self.enumname = enumname
         self.values = values
         self.semicol = semicol
+        self.constraints = constraints
 
     def __str__(self):
         strValues = "{"
@@ -96,13 +103,11 @@ class CEnumType():
 
 
 
-
-
 class CStructType():
     '''
     Represents struct type declaration C code snippet
     '''
-    def __init__(self, attributes=[], structname=None, semicol=True):
+    def __init__(self, attributes=[], structname=None, semicol=True, constraints=dict()):
         '''
         :param structname: name of struct type 'struct <structname> {...'
         :param attributes: list of struct attributes (C*Type objects)
@@ -110,6 +115,7 @@ class CStructType():
         self.structname = structname
         self.attributes = attributes
         self.semicol = semicol
+        self.constraints = constraints
 
     def __str__(self):
         strAttributes = "{"
@@ -130,7 +136,7 @@ class CUnionType():
     '''
     Represents union type declaration C code snippet
     '''
-    def __init__(self, attributes=[], unionname=None, semicol=True):
+    def __init__(self, attributes=[], unionname=None, semicol=True, constraints=dict()):
         '''
         :param unionname: name of union type 'union <unionname> {...'
         :param attributes: list of union attributes (C*Type objects)
@@ -138,6 +144,7 @@ class CUnionType():
         self.unionname = unionname
         self.attributes = attributes
         self.semicol = semicol
+        self.constraints = constraints
 
     def __str__(self):
         strAttributes = "{"
@@ -158,7 +165,7 @@ class CArrayType():
     '''
     Represents array declaration C code snippet
     '''
-    def __init__(self, valtype, name, size):
+    def __init__(self, valtype, name, size, constraints=dict()):
         '''
         :param valtype: type of elements
         :param name: array identifier
@@ -169,46 +176,11 @@ class CArrayType():
             valtype.semicol = False
         self.name = name
         self.size = size
+        self.constraints = constraints
     
     def __str__(self):
         return "{} {}[{}];".format(str(self.valtype), str(self.name), str(self.size))
 
+    def isSimplType(self):
+        return isinstance(self.valtype, str) and self.valtype in [ "int", "unsigned", "double", "float" ]
 
-
-"""testing -------------------------------------------------------------------------------
-
-vart = CVarType("int", "number")
-var = CVarAssign(vart, 4e55)
-
-array = CArrayType("char", "arrayname", 3)
-arrAssign = CArrayAssign(array, [ 1,3,4])
-
-enumt = CEnumType("Position", [ "UP", "DOWN", "LEFT"  ])
-
-structt1 = CStructType("Mysss", [array, array, vart])
-
-uniont = CUnionType("MYunion", [vart, array, ])
-
-vart1 = CVarType(structt1, "s1")
-structt = CStructType("Mysss", [array, vart])
-
-varstruct = CVarType(structt, "mystruct")
-
-uniont = CUnionType("MYunion", [vart, array, varstruct])
-
-value = dict()
-structvalue = dict()
-structvalue["arrayname"] = [ "\"sss\"", "asf", "abcdef"]
-structvalue["number"] = 333
-value["mystruct"] = structvalue
-
-uniontypedef = CTypedef(uniont, "UnionType")
-uniona = CUnionAssign(uniont, "instance", value, typedef="UnionType")
-
-
-print(str(varstruct))
-
-print(str(uniontypedef))
-print(str(uniona))
-"""
-        

@@ -36,11 +36,11 @@ class CVarAssign():
                                     str(self.value))
 
  
-class EnumAssign():
+class CEnumAssign():
     '''
     Represents enum variable assignment C code snippet
     '''
-    def __init__(self, enumtype, name, value, semicol=True, attrib=False):
+    def __init__(self, enumtype, name, value, semicol=True, attrib=False, typedef=None, inline=False):
         '''
         :param enumtype: CEnumType object
         :param name: variable identifier
@@ -50,12 +50,19 @@ class EnumAssign():
         self.name = name
         self.value = value
         self.attrib = attrib
+        self.inline = inline
+        self.typedef = typedef
         self.semicol = semicol
     
     def __str__(self):
         string = "enum "
         if self.enumtype.enumname != None:
             string += self.enumtype.enumname + " "
+        if self.inline:
+            self.enumtype.semicol = False
+            string = str(self.enumtype) + " "
+        if self.typedef != None:
+            string = self.typedef + " "
         if self.attrib:
             string = "."
         string += "{} = {}".format(str(self.name),
@@ -69,51 +76,63 @@ class CStructAssign():
     '''
     Represents struct variable assign C code snippet
     '''
-    def __init__(self, structtype, name, values, typedef=None, semicol=True, attrib=False):
+    def __init__(self, structtype, name, value, typedef=None, semicol=True, attrib=False, inline=False):
         '''
         :param structtype: CStructType object
         :param name: variable identifier
-        :param values: dict of attributes values
+        :param value: dict of attributes values
         :param typedef: type name that covers struct type (string format)
         '''
         self.structtype = structtype
         self.name = name
         self.typedef = typedef
         self.semicol = semicol
-        self.values = values
+        self.value = value
         self.attrib = attrib
+        self.inline = inline
         self.assigned = None
+        self.arrayelement = False
 
     def __str__(self):
         strAttributes = "{"
-        #last element indicator
-        last = self.structtype.attributes[len(self.structtype.attributes) - 1]
-        for a in self.structtype.attributes:
-            if not isinstance(a, (CVarType, CArrayType)):
-                raise CSerializeError("Illegal struct member in: " + self.uniontype.unionname)
-            if a.name not in self.values:
-                raise CSerializeError("Struct attribute left unassigned: " + self.uniontype.unionname + ": " + a.name)
-            if isinstance(a, CVarType):
-                if isinstance(a.variabletype, CStructType):
-                    self.assigned = CStructAssign(a.variabletype, a.name, self.values[a.name], semicol=False, attrib=True)
-                elif isinstance(a.variabletype, CEnumType):
-                    self.assigned = CVarAssign(a.variabletype, self.values[a.name], attrib=True)
-                elif isinstance(a.variabletype, CUnionType):
-                    self.assigned = CUnionAssign(a.variabletype, a.name, self.values[a.name], semicol=False, attrib=True)
-                else:
-                    self.assigned = CVarAssign(a, self.values[a.name], attrib=True)
-            elif isinstance(a, CArrayType):
-                self.assigned = CArrayAssign(a, self.values[a.name], semicol=False, attrib=True)
-
-            attr = indent(str(self.assigned))
-            strAttributes += "\n{}".format(attr)
-            if a != last:
-                strAttributes += ","
-        strAttributes += "\n}"
+        if isinstance(self.value, dict):
+            #last element indicator
+            last = self.structtype.attributes[len(self.structtype.attributes) - 1]
+            for a in self.structtype.attributes:
+                if not isinstance(a, (CVarType, CArrayType)):
+                    raise CSerializeError("Illegal struct member in: " + str(self.structtype))
+                if a.name not in self.value:
+                    raise CSerializeError("Struct attribute left unassigned: \n" + str(self.structtype) + ": " + a.name)
+                if isinstance(a, CVarType):
+                    if isinstance(a.variabletype, CStructType):
+                        self.assigned = CStructAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
+                    elif isinstance(a.variabletype, CEnumType):
+                        self.assigned = CEnumAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
+                    elif isinstance(a.variabletype, CUnionType):
+                        self.assigned = CUnionAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
+                    else:
+                        print(a.variabletype)
+                        self.assigned = CVarAssign(a, self.value[a.name], attrib=True)
+                elif isinstance(a, CArrayType):
+                    self.assigned = CArrayAssign(a, self.value[a.name], semicol=False, attrib=True)
+    
+                attr = indent(str(self.assigned))
+                strAttributes += "\n{}".format(attr)
+                if a != last:
+                    strAttributes += ","
+            strAttributes += "\n}"
+        else:
+            strAttributes = self.value
+        
+        if self.arrayelement:
+            return strAttributes
         
         string = "struct "
         if self.structtype.structname != None:
             string =+ str(self.structtype.structname) + " "
+        if self.inline:
+            self.structtype.semicol = False
+            string = str(self.structtype) + " "
         if self.typedef != None:
             string = self.typedef + " "
         if self.attrib:
@@ -128,7 +147,7 @@ class CUnionAssign():
     '''
     Represents union variable assign C code snippet
     '''
-    def __init__(self, uniontype, name, value, typedef=None, semicol=True, attrib=False):
+    def __init__(self, uniontype, name, value, typedef=None, semicol=True, attrib=False, inline=False):
         '''
         :param uniontype: CUnionType object
         :param name: variable identifier
@@ -141,7 +160,9 @@ class CUnionAssign():
         self.typedef = typedef
         self.semicol = semicol
         self.attrib = attrib
+        self.inline = inline
         self.assigned = None
+        self.arrayelement = False 
 
     def __str__(self):
         strAttributes = "{"
@@ -166,10 +187,16 @@ class CUnionAssign():
             
         strAttributes += "\n{}\n".format(indent(str(self.assigned)))
         strAttributes += "}"
-
+        
+        if self.arrayelement:
+            return strAttributes
+        
         string = "union "
         if self.uniontype.unionname != None:
             string += self.uniontype.unionname + " "
+        if self.inline:
+            self.uniontype.semicol = False
+            string = str(self.uniontype) + " "
         if self.typedef != None:
             string = self.typedef + " "
         if self.attrib:
@@ -199,10 +226,13 @@ class CArrayAssign():
     
     def __str__(self):
         strValues = "{"
-        strValues += " {}".format(str(self.values[0]))
-        for v in self.values[1:]:
-            strValues += ", {}".format(str(v))
-        strValues +=" }"
+        if isinstance(self.values, str):
+            strValues = "\"" + self.values + "\""
+        else:
+            strValues += " {}".format(str(self.values[0]))
+            for v in self.values[1:]:
+                strValues += ", {}".format(str(v))
+            strValues +=" }"
         
         if self.attrib:
             return ".{} = {}".format(str(self.arrtype.name),

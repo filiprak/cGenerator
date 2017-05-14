@@ -1,0 +1,63 @@
+{
+  "moduleName": "Math",
+  "moduleContents": [
+    {
+      "typeName":"Bitseq",
+      "type":"SEQUENCE OF",
+      "size":5,
+      "subtype":{
+      		"type":"BIT STRING",
+      		"size":4
+      }
+    },
+    
+    {
+      "typeName":"Octseq",
+      "type":"SEQUENCE OF",
+      "size":5,
+      "subtype":{
+      		"type":"OCTET STRING",
+      		"size":4
+      }
+    },
+    
+    {
+      "typeName":"Charseq",
+      "type":"SEQUENCE OF",
+      "size":5,
+      "subtype":{
+      		"type":"CHARACTER STRING",
+      		"size":4
+      }
+    },
+    
+    {
+      "objectName":"bitseq",
+      "type":"Bitseq",
+      "value":{
+      		"elements":[ "1101B", "fH", "0110B", "aH", "bH" ]
+      }
+    },
+    
+    {
+      "objectName":"octseq",
+      "type":"Octseq",
+      "value":{
+      		"elements":[ "11011101110111011101110111011101B",
+      					"ffffffffH", 
+      					"afafafafH",
+      					"ababababH",
+      					"1234abcdH" ]
+      }
+    },
+    
+    {
+      "objectName":"charseq",
+      "type":"Charseq",
+      "value":{
+      		"elements":[ "1234", "koty", "psy0", ";'.;", "ssss" ]
+      }
+    }
+    
+  ]
+}

@@ -59,8 +59,7 @@ class SemanticAnalyzer():
         
         sortedModules = []
         modules = modulesDict.keys()
-        print(modulesDict)
-        print()
+        
         while True:
             before = len(sortedModules)
             for module in modules: 

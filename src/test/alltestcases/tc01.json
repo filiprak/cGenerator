@@ -1,0 +1,125 @@
+{
+  "moduleName": "Test01",
+  "moduleContents": [
+    {
+      "typeName":"Vector",
+      "type":"SEQUENCE OF",
+      "size":5,
+      "subtype":{
+      		"type":"INTEGER"
+      }
+    },
+	{
+      "typeName":"Vector1",
+      "type":"SEQUENCE OF",
+      "size":5,
+      "subtype":{
+      		"type":"REAL"
+      }
+    },
+    {
+      "objectName":"myvect1",
+      "type":"Vector1",
+      "value":{
+        "elements":[ 1.0,2.1,-3.4,4.0,5.4 ]
+      }
+    },
+    {
+      "objectName":"myvect",
+      "type":"Vector",
+      "value":{
+        "elements":[ 1,2,3,4,5 ]
+      }
+    },
+    
+    
+    {
+      "typeName":"Vector8",
+      "type":"SEQUENCE OF",
+      "size":5,
+      "subtype":{
+      		"type":"REAL",
+			"max":3.1,
+			"encoding":"IEEE754-1985-32"
+      }
+    },
+    {
+      "objectName":"realseq",
+      "type":"Vector8",
+      "value":{
+        "elements":[ 1.0 , 2e-3, 3.1 ,0.4, -32e-9 ]
+      }
+    },
+    
+    
+    {
+      "typeName":"Vector9",
+      "type":"SEQUENCE OF",
+      "size":5,
+      "subtype":{
+      		"type":"INTEGER",
+			"encoding1":"IEEE754-1985-32"
+      }
+    },
+    
+    {
+      "typeName":"Myint",
+      "type":"INTEGER",
+      "max":3
+    },
+    
+    {
+      "objectName":"r",
+      "type":"Myint",
+      "value":3
+    },
+    {
+      "objectName":"i",
+      "type":"INTEGER",
+      "value":3
+    },
+    
+    {
+      "objectName":"intseq",
+      "type":"Vector9",
+      "value":{
+        "elements":[ 1,"i","i",1, 1 ]
+      }
+    },
+    
+    
+    {
+      "typeName":"Vector7",
+      "type":"SEQUENCE OF",
+      "size":5,
+      "subtype":{
+      		"type":"BOOLEAN",
+      		"true-value":"TRUE_",
+      		"false-value":"FALV_"
+      }
+    },
+    {
+      "typeName":"Mybool",
+      "type":"BOOLEAN",
+      "true-value":"TRUEV",
+      "false-value":"FALV"
+    },
+    {
+    	"objectName":"b",
+      	"type":"Mybool",
+      	"value":true
+    },
+    {
+    	"objectName":"a",
+      	"type":"Mybool",
+      	"value":"FALV"
+    },
+    {
+      "objectName":"boolseq",
+      "type":"Vector7",
+      "value":{
+        "elements":[ "TRUE_", true , "b", false, false ]
+      }
+    }
+  ]
+}

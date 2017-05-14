@@ -55,6 +55,10 @@ asn1types = [
     "CHOICE"
     ]
 
+intctypes = ["int", "unsigned"]
+
+floatctypes = ["double", "float"]
+
 # helper functions for validation c indentifiers and typenames
 def validCTypename(typename):
     if typename in reservedCKeywords:

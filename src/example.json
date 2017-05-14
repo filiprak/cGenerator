@@ -1,30 +1,29 @@
 {
- "moduleName": "test",
- "module": [
-   { 
-     "typeName": "MyInt",
-     "type": "INTEGER",
-     "minValue": "0",
-     "maxValue": "123",
-     "size": "8",
-     "encoding": "pos-int"
-     },
-   
-  {"SequenceName": "MySeq",
-    "data": [ 
-	{ "attrib': "a",
-	  "type": "MyInt",
-	  "value": "11"
-	 },
-	{ "attrib': "b",
-	  "type": "MyInt",
-	  "value": "12"
-	 },
-       { "attrib': "c",
-	  "type": "MyInt",
-	  "value": "13"
-	 }
-	]
+  "moduleName": "Math",
+  "moduleContents": [
+    {
+      "typeName":"Myseq",
+      "type":"SEQUENCE OF",
+      "size":2,
+      "subtype":{
+      		"type":"SEQUENCE OF",
+      		"size":2,
+      		"subtype":{
+      			"type":"CHARACTER STRING",
+      			"size":5
+      		}
+
       }
-   ] 
+    },
+    {
+      "objectName":"seqseq",
+      "type":"Myseq",
+      "value": {
+      		"elements":[ { "elements":[ {}, {} ] },
+      		{"elements":[ {}, {} ]} ]
+      }
+    }
+    
+    
+  ]
 }
