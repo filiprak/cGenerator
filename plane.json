@@ -1,49 +1,48 @@
 {
- "moduleName": "Plane",
- "imports":["Math"],
- "moduleContents": [
- {
- "typeName":"Plane",
- "type":"SET",
- "contents":[
- {
- "attribute":"normal",
- "type":"Vector"
- },
- {
- "attribute":"area",
- "type":"REAL",
- "encoding":"IEEE754-1985-32"
- },
- {
- "attribute":"name",
- "type":"CHARACTER STRING",
- "size":8
- }]
- },
- {
- "objectName":"norm",
- "type":"Vector",
- "value":{
- "x":1.0,
- "y":0.0,
- "z":0.0
- }
- },
- {
- "objectName":"plane",
- "type":"Plane",
- "value":{
- "normal":{
- "x":1.0,
- "y":0.0,
- "z":0.0
- },
- "area":30.0,
- "name":{
-	"string":"plane-01"
-	}
- }
- }
- ]
+	"moduleName": "Plane",
+	"imports": [
+		"Math"
+	],
+	"moduleContents": [
+		{
+			"typeName": "Plane",
+			"type": "SET",
+			"contents": [
+				{
+					"attribute": "normal",
+					"type": "Vector"
+				},
+				{
+					"attribute": "area",
+					"type": "REAL",
+					"encoding": "IEEE754-1985-32"
+				},
+				{
+					"attribute": "name",
+					"type": "CHARACTER STRING",
+					"size": 8
+				}
+			]
+		},
+		{
+			"objectName": "norm",
+			"type": "Vector",
+			"value": {
+				"x": 1.0,
+				"y": 0.0,
+				"z": 0.0
+			}
+		},
+		{
+			"objectName": "plane",
+			"type": "Plane",
+			"value": {
+				"normal": "norm",
+				"area": 30.0,
+				"name": {
+					"string": "plane-01"
+				}
+			}
+		}
+	]
 }

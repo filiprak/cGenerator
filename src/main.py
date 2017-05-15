@@ -105,7 +105,7 @@ def main(parseargs=True, files=[], outputfile="out.c", adddate=False):
 
 """start program execution"""
 if __name__ == "__main__":
-    main(parseargs=True, adddate=False)
+    main(parseargs=True, adddate=True)
     
     
     
