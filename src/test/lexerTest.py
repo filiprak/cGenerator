@@ -10,7 +10,6 @@ from jsonparser.lexer import JSONLexer
 
 
 # debuging purposes
-import sys
 from jsonparser.constants import Token
 from errors import LexerError
 
@@ -26,9 +25,6 @@ def tracefunc(frame, event, arg, indent=[0]):
         #print "| " * indent[0], "exit function", frame.f_code.co_name
         indent[0] -= 1
     return tracefunc
-
-
-#sys.settrace(tracefunc)
 
 
 def testLexer(testcase):

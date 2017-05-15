@@ -1,0 +1,318 @@
+{
+  "moduleName": "Test",
+  "moduleContents": [
+  	{
+      "typeName":"Mybool",
+      "type":"BOOLEAN",
+      "true-value":"PRAWDA",
+      "false-value":"FALSZ"
+    },
+    {
+      "typeName":"Myint",
+      "type":"INTEGER",
+	  "max":10,
+	  "encoding":"pos-int"
+    },
+    {
+      "typeName":"Myreal",
+      "type":"REAL",
+      "encoding":"IEEE754-1985-32",
+      "min":-2.5,
+      "max":2.5
+    },
+    {
+      "typeName":"Myenum",
+      "type":"ENUMERATED",
+      "enumerators":[ "E1", "E2", "E3" ]
+    },
+    {
+      "typeName":"Mybitstr",
+      "type":"BIT STRING",
+      "size":8
+    },
+    {
+      "typeName":"Myoctstr",
+      "type":"OCTET STRING",
+      "size":8
+    },
+    {
+      "typeName":"Mycharstr",
+      "type":"CHARACTER STRING",
+      "size":8
+    },
+    {
+      "typeName":"Myseq",
+      "type":"SEQUENCE",
+      "contents": [
+  		{
+         "attribute":"enumer",
+         "type":"Myenum"
+        },
+        {
+         "attribute":"octets",
+         "type":"Myoctstr"
+        }
+      ]
+    },
+    {
+      "typeName":"Myseqof",
+      "type":"SEQUENCE OF",
+      "size":6,
+      "subtype":{
+      	"type":"Mybool"
+      }
+    },
+  	{
+      "typeName":"Myset",
+      "type":"SET",
+      "size":2,
+      "contents": [
+  		{
+         "attribute":"bits",
+         "type":"BIT STRING",
+         "size":3
+        },
+        {
+         "attribute":"octets",
+         "type":"OCTET STRING",
+         "size":3
+        },
+      	{
+         "attribute":"chars",
+         "type":"CHARACTER STRING",
+         "size":3
+        }
+      ]
+    },
+    {
+      "typeName":"Mysetof",
+      "type":"SET OF",
+      "size":6,
+      "subtype":{
+      	"type":"Myint"
+      }
+    },
+    {
+      "typeName":"Mychoice",
+      "type":"CHOICE",
+      "contents": [
+  		{
+         "attribute":"bits",
+         "type":"BIT STRING",
+         "size":3
+        },
+        {
+         "attribute":"enums",
+         "type":"Myenum"
+        },
+      	{
+         "attribute":"chars",
+         "type":"Mycharstr"
+        }
+      ]
+    },
+    
+    
+    {
+      "typeName":"Seqofall",
+      "type":"SEQUENCE",
+      "contents":[
+        {
+         "attribute":"myint",
+         "type":"Myint"
+        },
+        {
+         "attribute":"mybool",
+         "type":"Mybool"
+        },
+        {
+         "attribute":"myreal",
+         "type":"Myreal"
+        },
+        {
+         "attribute":"myenum",
+         "type":"Myenum"
+        },
+        {
+         "attribute":"bstring",
+         "type":"Mybitstr"
+        },
+        {
+         "attribute":"ostring",
+         "type":"Myoctstr"
+        },
+        {
+         "attribute":"cstring",
+         "type":"Mycharstr"
+        },
+        {
+         "attribute":"myseq",
+         "type":"Myseq"
+        },
+        {
+         "attribute":"myseqof",
+         "type":"Myseqof"
+        },
+        {
+         "attribute":"myset",
+         "type":"Myset"
+        },
+        {
+         "attribute":"mysetof",
+         "type":"Mysetof"
+        },
+        {
+         "attribute":"mychoice",
+         "type":"Mychoice"
+        }
+        
+        ]
+    },
+    
+    
+    
+    
+    {
+      "objectName":"myint",
+      "type":"Myint",
+      "value":9
+    },
+    {
+      "objectName":"myint1",
+      "type":"Myint",
+      "value":10
+    },
+    {
+      "objectName":"myint2",
+      "type":"Myint",
+      "value":1
+    },
+    {
+      "objectName":"mybool",
+      "type":"Mybool",
+      "value":"PRAWDA"
+    },
+    {
+      "objectName":"mybool1",
+      "type":"Mybool",
+      "value":false
+    },
+    {
+      "objectName":"mybool2",
+      "type":"Mybool",
+      "value":true
+    },
+    {
+      "objectName":"myreal",
+      "type":"Myreal",
+      "value":-2.5
+    },
+    {
+      "objectName":"myenum",
+      "type":"Myenum",
+      "value":"E2"
+    },
+    {
+      "objectName":"mybitstr",
+      "type":"Mybitstr",
+      "value": {
+      		"string":"10011010B"
+      }
+    },
+    {
+      "objectName":"myoctstr",
+      "type":"Myoctstr",
+      "value":{
+      		"string":"ffaa34fbdd563201H"
+      }
+    },
+    {
+      "objectName":"mycharstr",
+      "type":"Mycharstr",
+      "value":{
+      		"string":"ciagznak"
+      }
+    },
+    {
+      "objectName":"myseq",
+      "type":"Myseq",
+      "value": {
+      		"enumer":"myenum",
+      		"octets":"myoctstr"
+      }
+    },
+    {
+      "objectName":"myseqof",
+      "type":"Myseqof",
+      "value": {
+      		"elements":[ "PRAWDA", "mybool", false, true, "mybool1", "mybool2" ]
+      }
+    },
+    {
+      "objectName":"myset",
+      "type":"Myset",
+      "value": {
+      		"bits":{
+      			"string":"111B"
+      		},
+      		"octets":{
+      			"string":"abcdefH"
+      		},
+      		"chars":{
+      			"string":"123"
+      		}
+      }
+    },
+    {
+      "objectName":"mysetof",
+      "type":"Mysetof",
+      "value": {
+      		"elements":[ 2, "myint", "myint2", 1, "myint1", 5]
+      }
+    },
+    {
+      "objectName":"mychoice",
+      "type":"Mychoice",
+      "value": {
+      		"bits":{
+      			"string":"101B"
+      		}
+      }
+    },
+    {
+      "objectName":"mychoice1",
+      "type":"Mychoice",
+      "value": {
+      		"chars":{
+      			"string":"a1b2b3%$"
+      		}
+      }
+    },
+    {
+      "objectName":"mychoice2",
+      "type":"Mychoice",
+      "value": {
+      		"enums":"E3"
+      }
+    },
+    {
+      "objectName":"allobjects",
+      "type":"Seqofall",
+      "value": {
+			"myint":"myint1",
+			"mybool":"mybool2",
+			"myreal":"myreal",
+			"myenum":"myenum",
+			"bstring":"mybitstr",
+			"ostring":"myoctstr",
+			"cstring":"mycharstr",
+			"myseq":"myseq",
+			"myseqof":"myseqof",
+			"myset":"myset",
+			"mysetof":"mysetof",
+			"mychoice":"mychoice"
+      }
+    }
+    
+  ]
+}

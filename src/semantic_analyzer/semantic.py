@@ -8,7 +8,8 @@ from errors import LogicError
 from contentsresolver import ContentsResolver
 
 
-class SemanticAnalyzer():    
+class SemanticAnalyzer(): 
+       
     def analyze(self, parsedDict, jsonFilelines):
         '''
         Main method, analyzes parsed files, returns declarations, definitions and defines if 

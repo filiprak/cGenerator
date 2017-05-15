@@ -16,7 +16,7 @@ class CVarAssign():
     Represents variable assign C code snippet.
     Can only be simple type, not structured.
     '''
-    def __init__(self, vartype, value, attrib=False):
+    def __init__(self, vartype, value, attrib=False, typedef=None):
         '''
         :param vartype: CVarType variable type
         :param value: represents value of variable
@@ -25,15 +25,21 @@ class CVarAssign():
         self.vartype = vartype
         self.name = vartype.name
         self.value = value
+        self.typedef = typedef
         self.attrib = attrib
     
     def __str__(self):
+        typestr = self.vartype.variabletype + " "
+        if self.typedef:
+            typestr = self.typedef + " "
         if self.attrib:
-            return ".{} = {}".format(str(self.vartype.name),
-                                     str(self.value))
-        return "{} {} = {};".format(str(self.vartype.variabletype),
+            typestr = "."
+        string = "{}{} = {}".format(str(typestr),
                                     str(self.vartype.name),
                                     str(self.value))
+        if not self.attrib:
+            string += ";"
+        return string
 
  
 class CEnumAssign():
@@ -165,28 +171,32 @@ class CUnionAssign():
 
     def __str__(self):
         strAttributes = "{"
-        for a in self.uniontype.attributes:
-            if not isinstance(a, (CVarType, CArrayType)):
-                raise CSerializeError("Illegal union member in: " + self.uniontype.unionname)
-            if a.name in self.value.keys():
-                if isinstance(a, CVarType):
-                    if isinstance(a.variabletype, CStructType):
-                        self.assigned = CStructAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
-                    elif isinstance(a.variabletype, CEnumType):
-                        self.assigned = CVarAssign(a.variabletype, self.value[a.name], attrib=True)
-                    elif isinstance(a.variabletype, CUnionType):
-                        self.assigned = CUnionAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
-                    else:
-                        self.assigned = CVarAssign(a, self.value[a.name], attrib=True)
-                elif isinstance(a, CArrayType):
-                    self.assigned = CArrayAssign(a, self.value[a.name], semicol=False, attrib=True)
-                break
-        if self.assigned == None:
-            raise CSerializeError("Illegal union assignment value: " + self.uniontype.unionname)
+        if isinstance(self.value, dict):
+            for a in self.uniontype.attributes:
+                if not isinstance(a, (CVarType, CArrayType)):
+                    raise CSerializeError("Illegal union member in: " + self.uniontype.unionname)
+                if a.name in self.value.keys():
+                    if isinstance(a, CVarType):
+                        if isinstance(a.variabletype, CStructType):
+                            self.assigned = CStructAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
+                        elif isinstance(a.variabletype, CEnumType):
+                            self.assigned = CEnumAssign(a.variabletype, a.name, self.value[a.name], attrib=True, semicol=False)
+                        elif isinstance(a.variabletype, CUnionType):
+                            self.assigned = CUnionAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
+                        else:
+                            self.assigned = CVarAssign(a, self.value[a.name], attrib=True)
+                    elif isinstance(a, CArrayType):
+                        self.assigned = CArrayAssign(a, self.value[a.name], semicol=False, attrib=True)
+                    break
+            if self.assigned == None:
+                raise CSerializeError("Illegal union assignment value: " + self.uniontype.unionname)
+
+            strAttributes += "\n{}\n".format(indent(str(self.assigned)))
+            strAttributes += "}"
             
-        strAttributes += "\n{}\n".format(indent(str(self.assigned)))
-        strAttributes += "}"
-        
+        else:
+            strAttributes = str(self.value)
+            
         if self.arrayelement:
             return strAttributes
         

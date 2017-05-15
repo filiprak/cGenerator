@@ -79,11 +79,11 @@ class Generator():
         Dumps generated string to file named by filename string parameter
         :param filename: name of file to dump C code to
         '''
-        print(self.filestring)
+        
         try:
             with open(filename, "w") as f:
                 f.write(self.filestring)
-            
+                
         except IOError as ioErr:
             ioErr.args += (filename,)
             raise

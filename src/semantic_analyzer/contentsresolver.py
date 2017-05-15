@@ -10,6 +10,7 @@ from semantic_analyzer.common import asn1types,\
     validCTypename, validCidentifier
 from defresolver import DefinitionResolver
 from errors import LogicError
+import math
 
 
 class ContentsResolver():
@@ -155,7 +156,7 @@ class ContentsResolver():
         if not jsonobj.getPair("size"):
             raise self.ContextLogicError("Size constraint must be specified for BIT STRING: 'size':<integer>", jsonobj)
         size = self.validConstraintPair(jsonobj, "size")
-        nrints = int(size / 32) + 1
+        nrints = int(math.ceil(float(size)/32))
         bitarrayt = CArrayType("int", "string", nrints)
         structt = CStructType([bitarrayt], constraints={ "bitstring":True, "size":int(size) })
         typedef = CTypedef(structt, typestring, constraints={ "bitstring":True, "size":int(size) })

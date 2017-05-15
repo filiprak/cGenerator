@@ -1,0 +1,104 @@
+{
+  "moduleName": "Test",
+  "moduleContents": [
+  	{
+      "objectName":"bool",
+      "type":"BOOLEAN",
+      "value":false
+    },
+    {
+      "objectName":"integ",
+      "type":"INTEGER",
+      "value":3
+    },
+    {
+      "objectName":"real",
+      "type":"REAL",
+      "value":45.974e-3
+    },
+    {
+      "objectName":"bitstr",
+      "type":"BIT STRING",
+      "size":64,
+      "value":"aabbccdd11223344H"
+    },
+    {
+      "objectName":"octstr",
+      "type":"OCTET STRING",
+      "size":3,
+      "value":"000000001111111100001111B"
+    },
+    {
+      "objectName":"charstr",
+      "type":"CHARACTER STRING",
+      "size":32,
+      "encoding":"ASCII",
+      "value":"lorem ipsum dolor sit amet\n\t\r"
+    },
+    {
+      "objectName":"enumval",
+      "type":"ENUMERATED",
+      "enumerators":[ "VALUE_", "VALUE__", "VALUE___" ],
+      "value":"VALUE_"
+    },
+    {
+      "typeName":"Sequence",
+      "type":"SEQUENCE",
+      "contents":[
+	        {
+		      "attribute":"bool",
+		      "type":"BOOLEAN",
+		      "true-value":"TrueVal"
+		    },
+		    {
+		      "attribute":"integ",
+		      "type":"INTEGER"
+		    },
+		    {
+		      "attribute":"real",
+		      "type":"REAL"
+		    },
+		    {
+		      "attribute":"bitstr",
+		      "type":"BIT STRING",
+		      "size":64
+		    },
+		    {
+		      "attribute":"octstr",
+		      "type":"OCTET STRING",
+		      "size":3
+		    },
+		    {
+		      "attribute":"charstr",
+		      "type":"CHARACTER STRING",
+		      "size":32,
+		      "encoding":"ASCII"
+		    },
+		    {
+		      "attribute":"enumval",
+		      "type":"ENUMERATED",
+		      "enumerators":[ "ENUMVAL0", "ENUMVAL1", "ENUMVAL2", "ENUMVAL3" ]
+		    }
+        ]
+    },
+    {
+      "objectName":"seq",
+      "type":"Sequence",
+      "value":{
+      		"bool":"bool",
+      		"integ":"integ",
+      		"real":"real",
+      		"bitstr":{
+      			"string":"002233447766ffaaH"
+      		},
+      		"octstr":{
+      			"string":"ffffffH"
+      		},
+      		"charstr":{
+      			"string":"042h1#%U^HT#%#$EGHhRWg%Y^THGBHWH"
+      		},
+      		"enumval":"ENUMVAL1"
+      }
+    }
+  ]
+}

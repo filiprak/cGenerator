@@ -14,10 +14,6 @@ from jsonparser.jsontypes import JSONObject, JSONPair, JSONString, JSONNumber,\
     JSONArray
 
 
-# debuging purposes
-import sys
-from jsonparser.constants import Token
-
 def tracefunc(frame, event, arg, indent=[0]):
     substring_list = ["parse", "equals"]
     if not any(substring in frame.f_code.co_name for substring in substring_list):

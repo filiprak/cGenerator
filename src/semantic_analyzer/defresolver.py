@@ -75,16 +75,16 @@ class DefinitionResolver():
                 definition = CStructAssign(structt, identifier, { "string":arrassign.values }, inline=True)
             elif objtype == "OCTET STRING":
                 size = self.validPair(jsonobj, "size", expvalue=["int"])
-                arrayt = CArrayType("char", "bytes", int(size))
-                arrassign = self.assignArrayType(jsonobj, arrayt, "bytes", { "octetstring":True, "size":size })
+                arrayt = CArrayType("char", "string", int(size))
+                arrassign = self.assignArrayType(jsonobj, arrayt, "string", { "octetstring":True, "size":size })
                 structt = CStructType([arrayt])
-                definition = CStructAssign(structt, identifier, { "bytes":arrassign.values }, inline=True)
+                definition = CStructAssign(structt, identifier, { "string":arrassign.values }, inline=True)
             elif objtype == "CHARACTER STRING":
                 size = self.validPair(jsonobj, "size", expvalue=["int"])
-                arrayt = CArrayType("char", "bytes", int(size))
-                arrassign = self.assignArrayType(jsonobj, arrayt, "bytes", { "charstring":True, "size":size })
+                arrayt = CArrayType("char", "string", int(size))
+                arrassign = self.assignArrayType(jsonobj, arrayt, "string", { "charstring":True, "size":size })
                 structt = CStructType([arrayt])
-                definition = CStructAssign(structt, identifier, { "bytes":arrassign.values }, inline=True)
+                definition = CStructAssign(structt, identifier, { "string":arrassign.values }, inline=True)
             elif objtype == "ENUMERATED":
                 values = self.validPair(jsonobj, "enumerators", expvalue=["array of strings"])
                 for v in values:
@@ -92,7 +92,9 @@ class DefinitionResolver():
                         raise self.ContextLogicError("Enum value '{}' duplicates".format(v) +\
                                                      " defined object identifier", jsonobj)
                     if v in self.enumerators:
-                        raise self.ContextLogicError("Redeclaration of enum value '{}'".format(v), jsonobj)
+                        raise self.ContextLogicError("Redeclaration of ENUMERATED value '{}'".format(v), jsonobj)
+                    if not validCidentifier(v):
+                        raise self.ContextLogicError("Illegal enumerator of ENUMERATED type '{}'".format(v), jsonobj)
                 enumt = CEnumType(values)
                 self.enumerators += values
                 definition = self.assignEnumType(jsonobj, enumt, identifier, dict(), inline=True)
@@ -149,9 +151,7 @@ class DefinitionResolver():
         
         isarrayelement, value = arrayelem
         
-        objecttype = CVarType(simpltype, ident, constr)
-        if typedef != None:
-            objecttype = CVarType(typedef, ident, constr)
+        objecttype = CVarType(simpltype, ident, constr, alias=typedef)
         # int as boolean value
         if simpltype == "int" and "boolean" in constr:
             if not isarrayelement:
@@ -159,19 +159,20 @@ class DefinitionResolver():
             if value not in [ "false", "true" ]:
                 if "true-value" in constr:
                     if value == constr["true-value"]:
-                        return CVarAssign(objecttype, value, attrib)
+                        return CVarAssign(objecttype, value, attrib, typedef=typedef)
                 if "false-value" in constr:
                     if value == constr["false-value"]:
-                        return CVarAssign(objecttype, value, attrib)
+                        return CVarAssign(objecttype, value, attrib, typedef=typedef)
                 defin = self.checkIfobjectDefined(value, objtype=CVarAssign)
                 if "boolean" not in defin.vartype.constraints:
                     raise self.ContextLogicError("Illegal object value, expected BOOLEAN value", jsonobj)
-                return CVarAssign(defin.vartype, value, attrib=attrib)
+                return CVarAssign(defin.vartype, value, attrib=attrib, typedef=typedef)
             elif value == "true":
-                return CVarAssign(objecttype, 1, attrib)
+                return CVarAssign(objecttype, 1, attrib=attrib, typedef=typedef)
             elif value == "false":
-                return CVarAssign(objecttype, 0, attrib)
-            return CVarAssign(objecttype, value, attrib)
+                return CVarAssign(objecttype, 0, attrib=attrib, typedef=typedef)
+            else:
+                raise self.ContextLogicError("Illegal object value, expected BOOLEAN value", jsonobj)
             
         # number value   
         if simpltype in intctypes or simpltype in floatctypes:
@@ -181,11 +182,14 @@ class DefinitionResolver():
                 value = self.validPair(jsonobj, valpairname, expvalue=["string", "float"])  
             if isinstance(value, str):
                 defin = self.checkIfobjectDefined(value, objtype=CVarAssign)
-                if not (defin.vartype.variabletype == simpltype and defin.vartype.constraints == constr):
+                if not defin.typedef == typedef:
                     raise self.ContextLogicError("Incompatible type for number assignment: '{}'".format(value), jsonobj)
-                return CVarAssign(objecttype, value, attrib)
+                elif defin.vartype.variabletype == simpltype and defin.vartype.constraints == constr:
+                    return CVarAssign(objecttype, value, attrib=attrib, typedef=typedef)
+                else:
+                    raise self.ContextLogicError("Incompatible type for number assignment: '{}'".format(value), jsonobj)
             self.checkNumberConstr(jsonobj, ident, value, constraints=constr)
-            return CVarAssign(objecttype, value, attrib)
+            return CVarAssign(objecttype, value, attrib=attrib, typedef=typedef)
         
         raise self.ContextLogicError("Internal error. Trying to assign non simple-type object", jsonobj)
         
@@ -210,15 +214,15 @@ class DefinitionResolver():
                 if isinstance(a.variabletype, CStructType):
                     
                     strassign = self.assignStructType(jsonvalues, a.variabletype,
-                        a.name, constr=a.constraints, typedef=a.variabletype.alias, attrib=True)
+                        a.name, constr=a.constraints, typedef=a.alias, attrib=True)
                     validvalues[a.name] = strassign.value
                 elif isinstance(a.variabletype, CEnumType):
                     enumassign = self.assignEnumType(jsonvalues, a.variabletype,
-                        a.name, constr=a.constraints, typedef=a.variabletype.alias, attrib=True)                    
+                        a.name, constr=a.constraints, typedef=a.alias, attrib=True)                    
                     validvalues[a.name] = enumassign.value
                 elif isinstance(a.variabletype, CUnionType):
                     uniassign = self.assignUnionType(jsonvalues, a.variabletype,
-                        a.name, constr=a.constraints, typedef=a.variabletype.alias, attrib=True)                    
+                        a.name, constr=a.constraints, typedef=a.alias, attrib=True)                    
                     validvalues[a.name] = uniassign.value
                 elif a.isSimplType():
                     simpleassign = self.assignSimpleType(jsonvalues, a.variabletype,
@@ -246,13 +250,13 @@ class DefinitionResolver():
         jsonstr = self.validPair(jsonobj, valpairname)
         if isinstance(jsonstr, JSONString):
             obj = self.checkIfobjectDefined(jsonstr.string, objtype=CUnionAssign)
-            if obj.typedef == cuniontype.alias:
+            if obj.typedef == typedef:
                 return CUnionAssign(cuniontype, ident, jsonstr.string, typedef=typedef, attrib=attrib)
         jsonvalues = self.validPair(jsonobj, valpairname, expvalue=["object"])
         propertynames = jsonvalues.getPairNames()
 
         if len(propertynames) != 1:
-            raise self.ContextLogicError("CHOICE object can be assigned only one value", jsonobj)
+            raise self.ContextLogicError("One of CHOICE object attributes should be assigned", jsonobj)
         attr = propertynames[0]
         for a in cuniontype.attributes:
             if a.name != attr:
@@ -263,15 +267,15 @@ class DefinitionResolver():
             if isinstance(a, CVarType):
                 if isinstance(a.variabletype, CStructType):
                     strassign = self.assignStructType(jsonvalues, a.variabletype,
-                        a.name, constr=a.constraints, typedef=a.variabletype.alias, attrib=True)                    
+                        a.name, constr=a.constraints, typedef=a.alias, attrib=True)                    
                     validvalue[a.name] = strassign.value
                 elif isinstance(a.variabletype, CEnumType):
                     enumassign = self.assignEnumType(jsonvalues, a.variabletype,
-                        a.name, constr=a.constraints, typedef=a.variabletype.alias, attrib=True)                    
+                        a.name, constr=a.constraints, typedef=a.alias, attrib=True)                    
                     validvalue[a.name] = enumassign.value
                 elif isinstance(a.variabletype, CUnionType):
                     uniassign = self.assignUnionType(jsonvalues, a.variabletype,
-                        a.name, constr=a.constraints, typedef=a.variabletype.alias, attrib=True)                    
+                        a.name, constr=a.constraints, typedef=a.alias, attrib=True)                    
                     validvalue[a.name] = uniassign.value
                 elif a.isSimplType():
                     simpleassign = self.assignSimpleType(jsonvalues, a.variabletype,
@@ -302,7 +306,7 @@ class DefinitionResolver():
         
         obj = self.checkIfobjectDefined(val, objtype=CEnumAssign)
 
-        if obj.typedef == cenumtype.alias:
+        if obj.typedef == typedef:
             return CEnumAssign(cenumtype, ident, val, attrib=attrib, typedef=typedef,inline=inline)
         raise self.ContextLogicError("Variable '{}' has incompatible value type".format(val), jsonobj)
 
@@ -334,7 +338,7 @@ class DefinitionResolver():
             validvalues = []
             values = self.validPair(jsonobj, valpairname, expvalue=["array"])
             if len(values) != carraytype.size:
-                raise self.ContextLogicError("Excess elements in array initializer", jsonobj)
+                raise self.ContextLogicError("Expected {} elements in array initializer".format(carraytype.size), jsonobj)
             for obj in values:
                 val = None
                 if isinstance(obj, JSONString):
@@ -350,7 +354,7 @@ class DefinitionResolver():
                 else:
                     self.ContextLogicError("Incomatible type of array element value", jsonobj)
                 cvarassign = self.assignSimpleType(jsonobj, carraytype.valtype, "array-element",
-                                  constr=carraytype.constraints,
+                                  constr=carraytype.constraints, typedef=carraytype.alias,
                                   attrib=attrib, arrayelem=(True, val))
                 validvalues.append(cvarassign.value)
             

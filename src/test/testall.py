@@ -6,17 +6,7 @@ This script runs all available tests
 import os
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0,parentdir)
-from main import main as test
-
-class Format():
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+from main import main as test, Format
     
 def filediff(f1, f2):
     with open(f1, 'r') as file1:
@@ -31,7 +21,7 @@ def filediff(f1, f2):
                     return False, lines1[i], lines2[i]
             return True, None, None
 
-NRTESTCASES = 7
+NRTESTCASES = 9
 
 messages = []
 outputdir = "output"
