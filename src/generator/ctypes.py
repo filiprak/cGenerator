@@ -33,14 +33,18 @@ class CVarType():
     Represents declaration of C variable
     Can be simple or structured type 
     '''
-    def __init__(self, variabletype, name, constraints=dict()):
+    def __init__(self, variabletype, name, constraints=dict(), alias=None):
         self.variabletype = variabletype
         if not isinstance(variabletype, str):
             self.variabletype.semicol = False
         self.name = name
         self.constraints = constraints
+        self.alias = alias
     
     def __str__(self):
+        if self.alias:
+            return "{} {};".format(str(self.alias),
+                               str(self.name))
         return "{} {};".format(str(self.variabletype),
                                str(self.name))
     
@@ -75,7 +79,7 @@ class CEnumType():
     '''
     Represents enum declaration C code snippet
     '''
-    def __init__(self, values, enumname=None,  semicol=True, constraints=dict()):
+    def __init__(self, values, enumname=None,  semicol=True, constraints=dict(), alias=None):
         '''
         :param enumname: enum <enumname> { ...
         :param values: list of string values that will be enumerated
@@ -85,6 +89,7 @@ class CEnumType():
         self.values = values
         self.semicol = semicol
         self.constraints = constraints
+        self.alias = alias
 
     def __str__(self):
         strValues = "{"
@@ -96,6 +101,8 @@ class CEnumType():
         string = "enum "
         if self.enumname != None:
             string += self.enumname + " "
+        if self.alias:
+            string = self.alias + " "
         string += str(strValues)
         if self.semicol:
             string += ";"
@@ -107,7 +114,7 @@ class CStructType():
     '''
     Represents struct type declaration C code snippet
     '''
-    def __init__(self, attributes=[], structname=None, semicol=True, constraints=dict()):
+    def __init__(self, attributes=[], structname=None, semicol=True, constraints=dict(), alias=None):
         '''
         :param structname: name of struct type 'struct <structname> {...'
         :param attributes: list of struct attributes (C*Type objects)
@@ -116,6 +123,7 @@ class CStructType():
         self.attributes = attributes
         self.semicol = semicol
         self.constraints = constraints
+        self.alias = alias
 
     def __str__(self):
         strAttributes = "{"
@@ -126,6 +134,8 @@ class CStructType():
         string = "struct "
         if self.structname != None:
             string += self.structname + " "
+        if self.alias:
+            string = self.alias + " "
         string += str(strAttributes)
         if self.semicol:
             string += ";"
@@ -136,7 +146,7 @@ class CUnionType():
     '''
     Represents union type declaration C code snippet
     '''
-    def __init__(self, attributes=[], unionname=None, semicol=True, constraints=dict()):
+    def __init__(self, attributes=[], unionname=None, semicol=True, constraints=dict(), alias=None):
         '''
         :param unionname: name of union type 'union <unionname> {...'
         :param attributes: list of union attributes (C*Type objects)
@@ -145,6 +155,7 @@ class CUnionType():
         self.attributes = attributes
         self.semicol = semicol
         self.constraints = constraints
+        self.alias = alias
 
     def __str__(self):
         strAttributes = "{"
@@ -155,6 +166,8 @@ class CUnionType():
         string = "union "
         if self.unionname != None:
             string += self.unionname + " "
+        if self.alias:
+            string = self.alias + " "
         string += str(strAttributes)
         if self.semicol:
             string += ";"
@@ -165,7 +178,7 @@ class CArrayType():
     '''
     Represents array declaration C code snippet
     '''
-    def __init__(self, valtype, name, size, constraints=dict()):
+    def __init__(self, valtype, name, size, constraints=dict(), alias=None):
         '''
         :param valtype: type of elements
         :param name: array identifier
@@ -177,8 +190,11 @@ class CArrayType():
         self.name = name
         self.size = size
         self.constraints = constraints
+        self.alias = alias
     
     def __str__(self):
+        if self.alias:
+            return "{} {}[{}];".format(str(self.alias), str(self.name), str(self.size))
         return "{} {}[{}];".format(str(self.valtype), str(self.name), str(self.size))
 
     def isSimplType(self):

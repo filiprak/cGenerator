@@ -1,0 +1,69 @@
+{
+  "moduleName": "Math",
+  "moduleContents": [
+  	{
+  		"typeName":"Innerseqof",
+  		"type":"SEQUENCE OF",
+      	"size":5,
+      	"subtype":{
+	      	"type":"INTEGER",
+	      	"max":30
+	     }
+	 },
+    {
+      "typeName":"Myseq",
+      "type":"SEQUENCE OF",
+      "size":2,
+      "subtype":{
+      		"type":"SEQUENCE OF",
+      		"size":2,
+      		"subtype":{
+				"type":"Innerseqof"
+      		}
+
+      }
+    },
+    {
+      "objectName":"inside",
+      "type":"Innerseqof",
+      "value":{
+      	"elements":[ 1,-2,3,-4,5 ]
+      }
+    },
+    
+    {
+      "objectName":"seqseq",
+      "type":"Myseq",
+      "value": {
+      		"elements":[
+	      		{
+	      			"value":{ 
+	      				"elements":["inside",
+	      				{
+	      					"value": {
+	      						"elements":[1,2,3,4,5]
+	      					}
+	      				}
+	      				]
+	      			}
+	      		},
+	      		{
+		      		"value":{ 
+	      				"elements":[{
+	      					"value": {
+	      						"elements":[1,2,3,4,5]
+	      					}
+	      				},
+	      				{
+	      					"value": {
+	      						"elements":[1,2,3,4,5]
+	      					}
+	      				}]
+	      			}
+	      		}
+      		]
+      }
+    }
+    
+  ]
+}

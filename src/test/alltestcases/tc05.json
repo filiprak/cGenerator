@@ -1,0 +1,105 @@
+{
+  "moduleName": "Math",
+  "moduleContents": [
+  	{
+      "typeName":"Set",
+      "type":"SET",
+      "size":2,
+      "contents": [
+  		{
+         "attribute":"bits",
+         "type":"BIT STRING",
+         "size":3
+        },
+        {
+         "attribute":"octets",
+         "type":"OCTET STRING",
+         "size":3
+        },
+      	{
+         "attribute":"chars",
+         "type":"CHARACTER STRING",
+         "size":3
+        }
+      ]
+    },
+    {
+      "typeName":"Vector",
+      "type":"CHOICE",
+      "contents":[
+        {
+         "attribute":"x",
+         "type":"REAL",
+         "max":10.0,
+         "min":-10.0
+        },
+        {
+         "attribute":"y",
+         "type":"CHOICE",
+         "contents":[
+         	{
+	         "attribute":"i",
+	         "type":"INTEGER"
+	        },
+	        {
+	         "attribute":"flag",
+	         "type":"BOOLEAN"
+	        }
+         ]
+        },
+        {
+         "attribute":"set",
+         "type":"Set"
+         },
+        {
+         "attribute":"z",
+         "type":"SEQUENCE",
+         "contents":[
+         	{
+	         "attribute":"o",
+	         "type":"REAL"
+	        },
+	        {
+	         "attribute":"w",
+	         "type":"REAL",
+	         "encoding":"IEEE754-1985-32"
+	        }
+         ]
+        }
+        ]
+    },
+    
+    {
+      "objectName":"set01",
+      "type":"Set",
+      "value":{
+    	"bits":{ "string":"100B"},
+    	"octets":{ "string":"6fa3ddH"},
+    	"chars":{ "string":"mam"}
+      }
+    },
+    {
+      "objectName":"myuni",
+      "type":"Vector",
+      "value":{
+        "z":{
+        	"o":4.9,
+        	"w":-3e4
+        }
+      }
+    },
+    
+    {
+      "objectName":"myuni1",
+      "type":"Vector",
+      "value":{
+        "set":{
+        	"bits":{ "string":"110B"},
+        	"octets":{ "string":"ffaaddH"},
+        	"chars":{ "string":"abc"}
+        }
+      }
+    }
+    
+  ]
+}

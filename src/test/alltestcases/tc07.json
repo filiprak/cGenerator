@@ -1,0 +1,75 @@
+{
+  "moduleName": "Math",
+  "moduleContents": [
+  	{
+      "typeName":"Color",
+      "type":"ENUMERATED",
+      "enumerators":[ "BLACK", "BLUE", "ORANGE", "YELLOW" ]
+    },
+    {
+      "typeName":"Mybool",
+      "type":"BOOLEAN",
+      "true-value":"PRAWDA",
+      "false-value":"FALSZ"
+    },
+    {
+      "typeName":"MySequence",
+      "type":"SEQUENCE",
+      "contents":[
+        {
+         "attribute":"flag",
+         "type":"Mybool"
+        },
+        {
+         "attribute":"color",
+         "type":"Color"
+        },
+        {
+         "attribute":"boolsequence",
+         "type":"SEQUENCE OF",
+         "size":3,
+         "subtype": {
+         	"type":"Mybool"
+         }
+        }
+        ]
+    },
+    {
+      "objectName":"flag1",
+      "type":"BOOLEAN",
+      "value":true
+    },
+    {
+      "objectName":"flag2",
+      "type":"Mybool",
+      "value":false
+    },
+    {
+      "objectName":"flag3",
+      "type":"Mybool",
+      "value":"PRAWDA"
+    },
+    {
+      "objectName":"flag4",
+      "type":"BOOLEAN",
+      "value":false
+    },
+    {
+      "objectName":"col1",
+      "type":"Color",
+      "value":"BLACK"
+    },
+    {
+      "objectName":"myseq",
+      "type":"MySequence",
+      "value":{
+      	"flag":"flag1",
+      	"color":"BLACK",
+      	"boolsequence": {
+      		"elements":[ false, "FALSZ", "PRAWDA" ]
+      	}
+      }
+    }
+    
+  ]
+}

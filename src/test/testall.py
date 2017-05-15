@@ -31,7 +31,7 @@ def filediff(f1, f2):
                     return False, lines1[i], lines2[i]
             return True, None, None
 
-NRTESTCASES = 2
+NRTESTCASES = 7
 
 messages = []
 outputdir = "output"

@@ -272,10 +272,8 @@ class ContentsResolver():
         size = self.validConstraintPair(jsonobj, "size")
         subobj = self.validSubtypePair(jsonobj)
         subattrt = self.validTypeAttribute(subobj, subtype=True)
-        constr = dict()
-        if subattrt.isSimplType():
-            constr = subattrt.constraints
-        arrayt = CArrayType(subattrt.variabletype, "elements", int(size), constraints=constr)
+        arrayt = CArrayType(subattrt.variabletype, "elements", int(size),
+                            constraints=subattrt.constraints, alias=subattrt.alias)
         structt = CStructType([ arrayt ])
         return CTypedef(structt, typestring)
     
@@ -356,7 +354,7 @@ class ContentsResolver():
             if typename == self.currTypename:
                 raise self.ContextLogicError("Recursive types are not supported: '{}'".format(typename), jsonobj)
             typedef = self.checkifTypeDefined(typename, jsonobj)
-            return CVarType(typedef.covered, attribname, constraints=typedef.constraints)
+            return CVarType(typedef.covered, attribname, constraints=typedef.constraints, alias=typename)
         attributetype = attrtypedef.covered
         return CVarType(attributetype, attribname, constraints=attrtypedef.constraints)
     

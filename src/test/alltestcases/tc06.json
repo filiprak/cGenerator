@@ -1,0 +1,92 @@
+{
+  "moduleName": "Math",
+  "moduleContents": [
+  	{
+      "typeName":"Color",
+      "type":"ENUMERATED",
+      "enumerators":[ "BLACK", "BLUE", "ORANGE", "YELLOW" ]
+    },
+    {
+      "typeName":"Color1",
+      "type":"ENUMERATED",
+      "enumerators":[ "BLACK1", "BLUE1", "ORANGE1", "YELLOW1" ]
+    },
+    {
+      "typeName":"Vector",
+      "type":"SEQUENCE",
+      "contents":[
+        {
+         "attribute":"x",
+         "type":"REAL",
+         "max":10.0,
+         "min":-10.0
+        },
+        {
+         "attribute":"y",
+         "type":"Color"
+        },
+        {
+         "attribute":"z",
+         "type":"SEQUENCE OF",
+         "size":3,
+         "subtype": {
+         	"type":"Color"
+         }
+        }
+        ]
+    },
+    {
+      "typeName":"ColVect",
+      "type":"SEQUENCE",
+      "contents":[
+        {
+         "attribute":"c1",
+         "type":"Color1"
+        },
+        {
+         "attribute":"c2",
+         "type":"Color1"
+        },
+        {
+         "attribute":"c3",
+         "type":"Color1"
+        },
+        {
+         "attribute":"c4",
+         "type":"Color1"
+        }
+        ]
+    },
+    {
+      "objectName":"col",
+      "type":"Color",
+      "value":"BLACK"
+    },
+    {
+      "objectName":"col1",
+      "type":"Color",
+      "value":"BLACK"
+    },
+    {
+      "objectName":"mycolvect",
+      "type":"ColVect",
+      "value":{
+        "c1":"ORANGE1",
+        "c2":"BLACK1",
+        "c3":"ORANGE1",
+        "c4":"ORANGE1"
+      }
+    },
+    {
+      "objectName":"myvect",
+      "type":"Vector",
+      "value":{
+        "x":3.0,
+        "y":"BLACK",
+        "z":{
+        	"elements":[ "BLACK", "col", "col1" ]
+        }
+      }
+    }
+  ]
+}

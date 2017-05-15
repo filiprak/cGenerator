@@ -1,0 +1,61 @@
+{
+  "moduleName": "Math",
+  "moduleContents": [
+    {
+      "typeName":"Myseq",
+      "type":"SEQUENCE OF",
+      "size":2,
+      "subtype":{
+      		"type":"SEQUENCE OF",
+      		"size":2,
+      		"subtype":{
+				"type":"SEQUENCE OF",
+      			"size":5,
+      			"subtype":{
+		
+	      			"type":"INTEGER"
+
+      			}
+      		}
+
+      }
+    },
+    {
+      "objectName":"seqseq",
+      "type":"Myseq",
+      "value": {
+      		"elements":[
+	      		{
+	      			"value":{ 
+	      				"elements":[{
+	      					"value": {
+	      						"elements":[1,2,3,4,5]
+	      					}
+	      				},
+	      				{
+	      					"value": {
+	      						"elements":[1,2,3,4,5]
+	      					}
+	      				}]
+	      			}
+	      		},
+	      		{
+		      		"value":{ 
+	      				"elements":[{
+	      					"value": {
+	      						"elements":[1,2,3,4,5]
+	      					}
+	      				},
+	      				{
+	      					"value": {
+	      						"elements":[1,2,3,4,5]
+	      					}
+	      				}]
+	      			}
+	      		}
+      		]
+      }
+    }
+    
+  ]
+}
