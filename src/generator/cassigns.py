@@ -111,7 +111,6 @@ class CStructAssign():
                     elif isinstance(a.variabletype, CUnionType):
                         self.assigned = CUnionAssign(a.variabletype, a.name, self.value[a.name], semicol=False, attrib=True)
                     else:
-                        print(a.variabletype)
                         self.assigned = CVarAssign(a, self.value[a.name], attrib=True)
                 elif isinstance(a, CArrayType):
                     self.assigned = CArrayAssign(a, self.value[a.name], semicol=False, attrib=True)

@@ -250,7 +250,7 @@ class DefinitionResolver():
                 return CUnionAssign(cuniontype, ident, jsonstr.string, typedef=typedef, attrib=attrib)
         jsonvalues = self.validPair(jsonobj, valpairname, expvalue=["object"])
         propertynames = jsonvalues.getPairNames()
-        print propertynames
+
         if len(propertynames) != 1:
             raise self.ContextLogicError("CHOICE object can be assigned only one value", jsonobj)
         attr = propertynames[0]
@@ -301,7 +301,7 @@ class DefinitionResolver():
             return CEnumAssign(cenumtype, ident, val, attrib=attrib, typedef=typedef,inline=inline)
         
         obj = self.checkIfobjectDefined(val, objtype=CEnumAssign)
-        print obj.typedef, typedef, cenumtype.alias
+
         if obj.typedef == cenumtype.alias:
             return CEnumAssign(cenumtype, ident, val, attrib=attrib, typedef=typedef,inline=inline)
         raise self.ContextLogicError("Variable '{}' has incompatible value type".format(val), jsonobj)

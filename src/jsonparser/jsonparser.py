@@ -72,6 +72,8 @@ class JSONParser():
         Parses json object, returns JSONObject
         '''
         jsonobject = JSONObject()
+        pairnames = []
+        
         line, token, string = self.tokenInfo()
         self.enumerated[jsonobject] = line
         
@@ -92,6 +94,9 @@ class JSONParser():
             self.nextToken()
             pair = self.parseJSONPair()
             jsonobject.append(pair)
+            if pair.name in pairnames:
+                raise ParserError("{}: line: {}: Duplication of pair name '{}'".format(self.currentFile, line, pair.name), line)
+            pairnames.append(pair.name)
         
         line, token, string = self.tokenInfo()
         raise ParserError(self.errorMessage(expected=" '}' at the end of JSON object"), line)

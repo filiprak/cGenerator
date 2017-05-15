@@ -39,12 +39,12 @@ def parseArgs():
     '''
     argparser = argparse.ArgumentParser(description='[TKOM] ASN.1 & ACN JSON description to C translator')
     argparser.add_argument('-o', action='store', metavar="output-file", help='Output translator C file name.')
-    argparser.add_argument('-json', metavar="json-file-list", nargs='+', required=False,
+    argparser.add_argument('-json', metavar="json-file-list", nargs='+', required=True,
                            help='Input JSON files with ASN.1 data description.')
     return argparser.parse_args()
     
 
-def main(parseargs=True, files=None, outputfile="out.c", adddate=False):
+def main(parseargs=True, files=[], outputfile="out.c", adddate=False):
     '''
     Main program function
     '''
@@ -88,7 +88,7 @@ def main(parseargs=True, files=None, outputfile="out.c", adddate=False):
 
 """start program execution"""
 if __name__ == "__main__":
-    main(parseargs=False, files=["example.json"], adddate=False)
+    main(parseargs=True, adddate=True)
     
     
     
