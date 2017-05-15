@@ -110,6 +110,13 @@ class DefinitionResolver():
         return definition
     
     def assignUserDefinedType(self, jsonobj, usertype, identifier, attrib=False):
+        '''
+        Assigns object which type is user-defined
+        :param jsonobj: object that contain value specification
+        :param usertype: string of type declared by user
+        :param identifier: object identifier
+        :param attrib: flag, tells if object is attribute of some structural type
+        '''
         typedef = self.checkIftypeDeclared(usertype)
         covered = typedef.covered
         constr = typedef.constraints
@@ -145,6 +152,16 @@ class DefinitionResolver():
         
     def assignSimpleType(self, jsonobj, simpltype, ident, constr,
                          attrib=False, typedef=None, arrayelem=(False, None)):
+        '''
+        Assigns simple typed object, simple type is one of int, unsigned, double or float
+        :param jsonobj: object that contain value specification
+        :param simpltype: one of int, unsigned, double or float
+        :param ident: object identifier
+        :param constr: dict of constraints for object
+        :param attrib: flag, tells if object is attribute of some structural type
+        :param typedef: string type that covers simple type
+        :param arrayelem: flag, tells if object is array element
+        '''
         valpairname = "value"
         if attrib:
             valpairname = ident
@@ -194,6 +211,16 @@ class DefinitionResolver():
         raise self.ContextLogicError("Internal error. Trying to assign non simple-type object", jsonobj)
         
     def assignStructType(self, jsonobj, cstructtype, ident, constr, attrib=False, typedef=None, inline=False):
+        '''
+        Assigns struct type
+        :param jsonobj: object that contain value specification
+        :param ident: object identifier
+        :param constr: dict of constraints for object
+        :param attrib: flag, tells if object is attribute of some structural type
+        :param typedef: string type that covers simple type
+        :param cstructtype: CStructType object that specifies struct type
+
+        '''
         valpairname = "value"
         if attrib:
             valpairname = ident
@@ -242,6 +269,16 @@ class DefinitionResolver():
         return CStructAssign(cstructtype, ident, validvalues, typedef=typedef, attrib=attrib, inline=inline)
     
     def assignUnionType(self, jsonobj, cuniontype, ident, constr, attrib=False, typedef=None, inline=False):
+        '''
+        Assigns union type object
+        :param jsonobj: object that contain value specification
+        :param cuniontype: CUnionType object that specifies union type
+        :param ident: object identifier
+        :param constr: dict of constraints for object
+        :param attrib: flag, tells if object is attribute of some structural type
+        :param typedef: string type that covers simple type
+        :param arrayelem: flag, tells if object is array element
+        '''
         valpairname = "value"
         if attrib:
             valpairname = ident
@@ -296,6 +333,16 @@ class DefinitionResolver():
         raise self.ContextLogicError("CHOICE assign failed, attribute '{}' does not exist".format(attr), jsonobj)
     
     def assignEnumType(self, jsonobj, cenumtype, ident, constr, attrib=False, typedef=None, inline=False):
+        '''
+        Assigns enum type object
+        :param jsonobj: object that contain value specification
+        :param cenumtype: CEnumType object that specifies enum type
+        :param ident: object identifier
+        :param constr: dict of constraints for object
+        :param attrib: flag, tells if object is attribute of some structural type
+        :param typedef: string type that covers simple type
+        :param arrayelem: flag, tells if object is array element
+        '''
         valpairname = "value"
         if attrib:
             valpairname = ident
@@ -311,6 +358,14 @@ class DefinitionResolver():
         raise self.ContextLogicError("Variable '{}' has incompatible value type".format(val), jsonobj)
 
     def assignArrayType(self, jsonobj, carraytype, ident, constr, attrib=False):
+        '''
+        Assigns array type object
+        :param jsonobj: object that contain value specification
+        :param carraytype: CArrayType that specifies array object type
+        :param ident: object identifier
+        :param constr: dict of constraints for object
+        :param attrib: flag, tells if object is attribute of some structural type
+        '''
         valpairname = "value"
         if attrib:
             valpairname = ident
@@ -472,6 +527,13 @@ class DefinitionResolver():
     This methods helps with validating if JSONPairs value and structure are as wanted
     '''
     def checkNumberConstr(self, jsonobj, ident, value, constraints):
+        '''
+        Checks if certain object value fulfils constraints
+        :param jsonobj: jsonobject that contains value specification
+        :param ident: object identifier
+        :param value: object value
+        :param constraints: dict of constraints
+        '''
         if "min" in constraints:
             if value < constraints["min"]:
                 raise self.ContextLogicError("Value of "+\
@@ -488,6 +550,13 @@ class DefinitionResolver():
         return True
     
     def checkIfobjectDefined(self, identifier, objtype=None, exception=True):
+        '''
+        Checks if certain object is already defined
+        :param identifier: object identifier
+        :param objtype: CVarType, CStructType, CUnionType or CEnumType CArrayType object
+        :param exception: flag, tells if exception will be thrown when inproper type or object 
+                    does not exist
+        '''
         for defin in self.definitions:
             if defin.name == identifier:
                 if objtype:
@@ -499,15 +568,28 @@ class DefinitionResolver():
         return None
     
     def checkIftypeDeclared(self, typename, exception=True):
+        '''
+        Checks if certain type is already defined
+        :param typename: typename that will it look for
+        :param exception: flag, tells if exception will be thrown when type or type 
+                    is not declared yet
+        '''
         for typedef in self.declarations:
             if typedef.typename == typename:
                 return typedef
         if exception:
-            raise self.ContextLogicError("Type '{}' is not defined anywhere".format(typename), self.currObject)
+            raise self.ContextLogicError("Type '{}' is not defined".format(typename), self.currObject)
         return None
     
-    def validPair(self, jsonobj, name, expvalue=[], exception=True):
-        
+    def validPair(self, jsonobj, name, expvalue=["any"], exception=True):
+        '''
+        Checks if pair exist in certain JSONObject object and if it holds value of given type
+        :param jsonobj: JSONObject object to look for pair
+        :param name: name of the pair
+        :param expvalue: expected values list ("strings")
+        :param exception: flag, tells if exception have to be thrown if pair does not
+                exist or if it holds unsuitable type
+        '''
         error = self.ContextLogicError("Missing or incorrect property" + \
                                        " '{}', expected value types {}".format(name, str(expvalue)), jsonobj)
         pair = jsonobj.getPair(name)
@@ -542,13 +624,20 @@ class DefinitionResolver():
         elif "null" in expvalue and pair.holdsLiteral():
             if pair.value.literal == "null":
                 return "null"
-        elif len(expvalue) == 0:
+        elif "any" in expvalue:
             return pair.value
         if exception:
             raise error
         return None
         
     def bitStringStrip(self, jsonobj, string, chunk, expectnrbits):
+        '''
+        Strips bit or octet string to chunks
+        :param jsonobj: JSONObject that holds value (current context object)
+        :param string: string to strip
+        :param chunk: size of single chunk
+        :param expectnrbits: expected number of bits in string to strip
+        '''
         i = 0
         form = string[-1:]
         string = string[:-1]
